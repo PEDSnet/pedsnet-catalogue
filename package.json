@@ -1,0 +1,48 @@
+{
+  "name": "pedsnet-catalogue",
+  "version": "0.1.0",
+  "license": "BSD",
+  "description": "PEDSnet Catalogue",
+  "homepage": "https://github.com/PEDSnet/pedsnet-catalogue",
+  "author": "The Children's Hospital of Philadelphia",
+  "contributors": [
+    {
+      "name": "Byron Ruth",
+      "email": "b@devel.io"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PEDSnet/pedsnet-catalogue.git"
+  },
+  "devDependencies": {
+    "bootstrap": "^3.3.4",
+    "director": "^1.2.8",
+    "flux": "^2.0.1",
+    "font-awesome": "^4.3.0",
+    "grunt": "^0.4.5",
+    "grunt-contrib-clean": "^0.6.0",
+    "grunt-contrib-copy": "^0.8.0",
+    "grunt-contrib-jshint": "^0.11.2",
+    "grunt-contrib-sass": "^0.9.2",
+    "grunt-contrib-watch": "^0.6.1",
+    "grunt-jsbeautifier": "^0.2.10",
+    "grunt-react": "^0.12.2",
+    "grunt-sync": "^0.2.3",
+    "grunt-webpack": "^1.0.8",
+    "jshint-stylish": "^1.0.1",
+    "jsx-loader": "^0.13.1",
+    "node-sass": "^2.1.1",
+    "page": "^1.6.2",
+    "promise-polyfill": "^2.0.2",
+    "react": "^0.13.1",
+    "react-hot-loader": "^1.2.5",
+    "sass-loader": "^0.6.0",
+    "shelljs": "^0.4.0",
+    "underscore": "^1.8.3",
+    "uri-template": "^1.0.0",
+    "url-template": "^2.0.6",
+    "webpack": "^1.8.5",
+    "webpack-dev-server": "^1.8.0"
+  }
+}

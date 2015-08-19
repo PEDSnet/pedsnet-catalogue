@@ -1,0 +1,13 @@
+origins:
+    image: dbhi/origins
+
+    environment:
+        ORIGINS_STORAGE: boltdb
+        ORIGINS_PATH: /data/origins-catalogue.boltdb 
+        ORIGINS_HTTP_HOST: 0.0.0.0
+
+    command: origins http --host=0.0.0.0
+
+
+nginx:
+    build: .
