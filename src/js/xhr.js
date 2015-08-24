@@ -31,10 +31,10 @@ var send = function(options) {
         // Bind handler to know when a response has ocurred
         req.onload = function() {
             var data = this.response;
-
+            
             // This is called even on 404 etc; so check the status
             if (this.status === 200) {
-                if (this.getResponseHeader('Content-Type') === 'application/json') {
+                if (this.getResponseHeader('Content-Type').includes('application/json')) {
                     data = JSON.parse(data);
                 }
 

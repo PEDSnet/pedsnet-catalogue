@@ -1,28 +1,19 @@
-var reverse = function(domain, local) {
-    switch (domain) {
-        case 'pedsnet.dcc.loader':
-            if (/database\//.test(local)) {
-                return '/etl/databases/' + local + '/';
-            } else if (/process\//.test(local)) {
-                return '/etl/processes/' + local + '/';
-            } else if (/archive\//.test(local)) {
-                return '/etl/archives/' + local + '/';
-            }
-            break;
-        case 'pcornet.cdm':
-            return '/data/pcornet/' + local + '/';
-            break;
-        case 'pedsnet.cdm':
-            return '/data/pedsnet/' + local + '/';
-            break;
-        case 'i2b2.data':
-            return '/data/i2b2/' + local + '/';
-            break;
+var resources = require('./resources');
+
+
+var reverse = function() {
+    var addr = '';
+
+    if (arguments.length >0 && resources.models.indexOf(arguments[0]) >= 0) {
+        addr = '/data/';
+
+        for (var i=0; i<arguments.length; i++) {
+            addr += (arguments[i] + '/');
+        }
     }
 
-    return '';
+    return addr;
 };
-
 
 
 module.exports = {

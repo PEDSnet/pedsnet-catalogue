@@ -1,14 +1,22 @@
 $spacing: 18px;
 $font-size: 14px;
 $radius: 2px;
-$monospace: Menlo, Monaco, Consolas, "Courier New", monospace;
+$monospace: Menlo, Monaco, Consolas, 'Courier New', monospace;
 $primary: #313a86;
 $primary-light: #434EB6;
 
 body {
-    padding-top: 60px;
+    padding-top: 80px;
     font-weight: 200;
     font-size: $font-size;
+}
+
+html, body, .fixed-height {
+    height: 100%;
+}
+
+main {
+    height: calc(100% - 20px)
 }
 
 p {
@@ -23,6 +31,9 @@ a:hover, a:active {
     color: $primary;
 }
 
+a.required {
+    font-weight: 600;
+}
 
 .spinner {
     text-align: center;
@@ -42,6 +53,7 @@ a:hover, a:active {
     font-weight: 600;
     text-transform: small-caps;
     margin-top: 10px;
+    margin-bottom: 10px;
 }
 
 .nav.nav-pills > li {
@@ -143,4 +155,111 @@ header {
             height: 36px;
         }
     }
+}
+
+.panel-heading a:hover {
+    cursor: pointer;
+}
+
+.panel-heading a:after, 
+.panel-heading span:after {
+    font-family: FontAwesome;
+    font-weight: 400;
+    /* fa-chevron-down */
+    content: '\f078';
+    float: right;
+    color: #555;
+}
+.panel-heading a.collapsed:after, 
+.panel-heading span.collapsed:after {
+    /* fa-chevron-right */
+    content:'\f054';
+    color: $primary-light;
+}
+
+// make the entite block with table title clickable, not just the link itself
+.panel-title > a {
+    display: block;
+    text-decoration: none;
+}
+
+// highlight active table and field name 
+.panel-default > .active {
+    background-color: $primary-light;
+}
+.panel-default > .active a {
+    color: #fff;
+}
+.panel-default > .active a:after {
+    color: #fff;
+}
+
+.paragraph {
+    padding: 20px;
+}
+
+.title-link > a {
+    text-decoration: none;
+}
+
+.scrollable {
+    overflow-y: auto;
+}
+
+.table .data {
+    margin-bottom: 10px;
+}
+
+.table-field-list {
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+.external-link:hover {
+    cursor: pointer;
+}
+
+
+.external-link:after {
+    font-family: FontAwesome;
+    /* fa-external-link */
+    content: '  \f08e';
+}
+
+.table-field:after {
+    content: attr(data-type);
+    float: right;
+    font-weight: 200;
+    font-size: 12px;
+}
+
+.panel-default > .data-model-heading {
+    background-color: #fff 
+}
+
+.panel-default > .active {
+    background-color: $primary-light
+}
+
+.model-version-list {
+    margin: 0;
+    margin-top: 5px;
+}
+
+.nav.nav-pills > li > .model-version-link {
+    padding-left: 25px;
+}
+
+.dqa a {
+    color: $primary-light;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+#dqaContainer > .fixedDataTableLayout_main {
+    border-width: 0;    
+}
+
+.col-md-offset-05 {
+    margin-left: 4.166666665%;
 }

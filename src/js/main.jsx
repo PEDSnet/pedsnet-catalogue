@@ -6,108 +6,108 @@ var React = require('react'),
 var mainRegion = document.getElementById('main');
 
 
-var client = require('./client'),
-    resources = require('./resources');
+var client = require('./client');
+var resources = require('./resources');
 
 
 // Pages
-var Dashboard = require('./pages/dashboard'),
-    ETL = require('./pages/etl'),
-    Data = require('./pages/data'),
-    DataModelObject = require('./data-model-object');
+var Data = require('./pages/data');
 
 
 page('/', function() {
-    var component = React.render(<Dashboard />, mainRegion);
-
-    // ETL activity
-    client.fetch({url: resources.etl, cache: true}).then(function(resp) {
-        component.setProps({
-            etlActivity: resp.data
-        });
-    });
-
-    // Data activity
-    client.fetch({url: resources.warehouse, cache: true}).then(function(resp) {
-        component.setProps({
-            dataActivity: resp.data
-        });
-    });
+    page.redirect('/data/');
 });
 
 
-page('/etl/:page?/:resource*', function(cxt) {
-    if (!cxt.params.page) {
-        page.redirect('/etl/feed/');
+page('/data/:model?/:version?/:table?/:field*', function(cxt) {
+    var model = cxt.params.model;
+    var table = cxt.params.table;
+    var field = cxt.params.field;
+    var version = cxt.params.version;
+
+    if (!model) {
+        if (resources.models.length > 0) {
+            page.redirect('/data/'+resources.models[0]+'/');
+        }
         return;
     }
 
-    // All pages currently use this URL.
-    var url = resources.etl;
+    var component = React.render(<Data modelName = {model} 
+                                       activeTable = {table} 
+                                       activeField = {field}
+                                       version = {version}/>,
+                                 mainRegion);
 
-    var component = React.render(
-        <ETL item={cxt.params.page}
-            resource={cxt.params.resource}
-        />,
-        mainRegion);
-
-    if (url) {
-        client.fetch({url: url, cache: true}).then(function(resp) {
-            component.setProps({
-                facts: resp.data
+    var fetchDataModel = function(url) {
+        return new Promise(function(resolve) {
+            client.fetch({url: url, cache: true}).then(function(resp) {
+                var dm = {};
+                for (var i = resp.data.length-1; i >= 0; i--) {
+                    dm[resp.data[i].version] = resp.data[i];
+                }
+                resolve(dm);
             });
         });
-    }
-});
+    };
 
-
-page('/data/:page?/:resource*', function(cxt) {
-    if (!cxt.params.page) {
-        page.redirect('/data/feed/');
-        return;
-    }
-
-    var url;
-
-    switch (cxt.params.page) {
-        case 'feed':
-            url = resources.warehouse;
-            break;
-        case 'pedsnet':
-            url = resources.pedsnet;
-            break;
-        case 'i2b2':
-            url = resources.i2b2;
-            break;
-        case 'pcornet':
-            url = resources.pcornet;
-            break;
-    }
-
-    var component = React.render(<Data item={cxt.params.page} resource={cxt.params.resource} />, mainRegion);
-
-    if (url) {
-        client.fetch({url: url, cache: true}).then(function(resp) {
+    var urlDataModel = resources.urls.dataModel +
+                       (resources.dataModelAliases[model] || model) + '?format=json';
+    fetchDataModel(urlDataModel).then(function(resp) {
+        // if version wasn't specified in the url, redirect to the highest version
+        var versions = Object.keys(resp);
+        if (!version && versions.length>0) {
+            page.redirect('/data/'+model+'/'+versions.sort().reverse()[0]);
+        } else {
             component.setProps({
-                facts: resp.data
+                modelAllVersions: resp
             });
-        });
-    }
-});
-
-
-page('/catalogue/:domain/:ident+', function(cxt) {
-    var component = React.render(<DataModelObject />, mainRegion);
-
-    var url = '/domains/' + cxt.params.domain + '/aggregate/' + cxt.params.ident;
-
-    client.fetch({url: url, cache: true}).then(function(resp) {
-        component.setProps({
-            object: resp.data
-        });
+        }
     });
-});
 
+    if (version) {
+        var urlETL = resources.urls.etl + model + '?version=' + version;
+
+        client.fetch({url: urlETL, cache: true}).then(function(resp) {
+            var etlContent = '';
+            if (table) {
+                if (field) {
+                    etlContent = resp.data.model.tables[table].fields[field].etl_conventions;
+                } else {
+                    etlContent = resp.data.model.tables[table].content;
+                }
+            } else {
+                // model-level etl conventions
+                etlContent = resp.data.model.content;
+            }
+
+            component.setProps({
+                etlConventions: etlContent
+            });
+        }).catch(function() {});
+    }
+
+    // site comments are only available on the field level
+    if (field) {
+        urlDataDict = resources.urls.dataDict + model + '/' + version;
+        client.fetch({url: urlDataDict, cache: true}).then(function(resp) {
+            component.setProps({
+                siteComments: { 
+                    status: resp.data.model[table][field].implementation_status,
+                    comment: resp.data.model[table][field].site_comments,  
+                }
+            });
+        }).catch(function() {});
+    }
+
+    if (field) { 
+        urlDQA = resources.urls.dqa + model + '/' + version;
+        client.fetch({url: urlDQA, cache: true}).then(function(resp) {
+            component.setProps({
+                dqa: resp.data
+            });
+        }).catch(function() {});
+    }
+});
 
 // Catch-all for 404.
 var NotFound = require('./pages/404');

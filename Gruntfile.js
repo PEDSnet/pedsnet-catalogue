@@ -130,7 +130,8 @@ var config = {
                 src: [
                     'font-awesome/css/font-awesome.css',
                     'bootstrap/dist/css/bootstrap.css',
-                    'bootstrap/dist/css/bootstrap.css.map'
+                    'bootstrap/dist/css/bootstrap.css.map',
+                    'fixed-data-table/dist/fixed-data-table.css',
                 ],
                 dest: '<%= buildDir %>/css'
             }, {
