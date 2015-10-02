@@ -1,121 +1,117 @@
 var React = require('react'),
     _ = require('underscore');
 
-var Page = require('./page'),
-    Loader = require('../loader'),
+var client = require('../client'),
     DataModel = require('../data-model'),
-    FactLog = require('../fact-log'),
-    Comparators = require('../comparators');
-
-
-var dataModels = {
-    'pedsnet': {
-        ident: 'pedsnet',
-        path: '/data/pedsnet/',
-        label: 'PEDSnet',
-        doc: 'The PEDSnet data model is a superset of the OMOP.',
-    },
-
-    'pcornet': {
-        ident: 'pcornet',
-        path: '/data/pcornet/',
-        label: 'PCORnet',
-        doc: 'The PCORnet data model is provided by PCORI.',
-    },
-
-    'i2b2': {
-        ident: 'i2b2',
-        path: '/data/i2b2/',
-        label: 'i2b2',
-        doc: 'The i2b2 data model comes from the i2b2 project.',
-    }
-};
-
-
-var navigation = [
-    'pedsnet',
-    'pcornet',
-    'i2b2'
-];
+    Loader = require('../loader'),
+    Page = require('./page'),
+    resources = require('../resources');
 
 
 var Data = React.createClass({
     propTypes: {
-        item: React.PropTypes.string.isRequired,
-        resource: React.PropTypes.string,
-        facts: React.PropTypes.array
+        modelName: React.PropTypes.string.isRequired,
+        modelAllVersions: React.PropTypes.object,
+        activeTable: React.PropTypes.string,
+        activeField: React.PropTypes.string,
+        version: React.PropTypes.string,
+        etlConventions: React.PropTypes.string,
+        siteComments: React.PropTypes.object,
+        dqa: React.PropTypes.object,
     },
 
     getDefaultProps: function() {
         return {
-            item: navigation[0],
-            resource: '',
-            facts: []
+            modelAllVersions: {},
         };
     },
 
     render: function() {
-        var activeItem = this.props.item;
+        var versions = Object.keys(this.props.modelAllVersions).sort().reverse();
+       
+        var version = this.props.version;
+        if (!version && versions.length>0) {
+            version = versions[0];
+        }
 
-        var item, className;
+        var modelName = this.props.modelName;
 
-        var dataModelLinks = _.map(navigation, function(ident) {
-            className = ident === activeItem ? 'active' : '';
-
-            item = dataModels[ident];
-
+        var versionList = _.map(versions, function(ver) {
             return (
-                <li key={item.ident} className={className}>
-                    <a href={item.path}>{item.label}</a>
+                <li key={modelName+ver} className = {ver === version ? 'active' : ''}>
+                     <a className='model-version-link' href={'/data/'+modelName+'/'+ver}>{ver}</a>
                 </li>
             );
         });
-
-        var content;
-
-        if (this.props.item === 'feed') {
-            content = (
+        
+        var dataModelLinks = _.map(resources.models, function(model) {
+            var isActive = (model === this.props.modelName);
+            
+            var versionsDropdown = (!isActive || versions.length === 0) ? null :
                 <div>
-                    <h3>Feed</h3>
-
-                    <FactLog facts={this.props.facts} comparator={Comparators.entityTime} />
+                    <div className='list-group model-version-list'>
+                        <ul className='nav nav-pills nav-stacked'>{versionList}</ul>
+                    </div>
                 </div>
-            );
-        } else {
-            var model = dataModels[this.props.item];
 
-            if (model) {
-                content = <DataModel label={model.label}
-                                     doc={model.doc}
-                                     facts={this.props.facts}
-                                     resource={this.props.resource} />;
-            }
+            return (
+                <li key={'dm_'+model} className='panel-group data'>
+                    <div className='panel panel-default'>
+                        <div className={'panel-heading data-model-heading' + (isActive ? ' active' : '')}>
+                            <h4 className='panel-title'>
+                                <a href={'/data/'+model+'/'+(isActive?version:'')} className = {!isActive ? 'collapsed' : ''}>{model}</a>
+                            </h4>
+                        </div>
+                        {versionsDropdown}
+                    </div>
+                </li>
+            );
+        }.bind(this));
+
+        var activeModel;
+        if (version && !_.isEmpty(this.props.modelAllVersions)) {
+            var activeModel = this.props.modelAllVersions[version];
         }
 
+        /* Note: 
+        1) render DataModel every time, and not only when activeModel is set.
+           Otherwise the DataModel component will keep getting unmounted and re-mounted,
+           thus unable to maintain continous state. 
+        2) set key for DataModel to (model name + version), so that the component is re-mounted
+           when user navigates between versions. 
+        */
         return (
             <Page>
-                <div className="page-header">
-                    <h3><i className="fa fa-database" /> Data <small>Provenance and data quality assessments about the data published by the DCC.</small></h3>
+                <div className='page-header' style={{'height': '50px'}}>
+                    <h3><i className='fa fa-database' /> Provenance and data quality assessments about the data published by the DCC.</h3>
                 </div>
 
-                <div className="row">
-                    <div className="col-md-2">
-                        <ul className="nav nav-pills nav-stacked">
-                            <li className={activeItem === 'feed' ? 'active' : ''}><a href="/data/feed/">Feed</a></li>
-                            <li className={activeItem === 'quality' ? 'active' : ''}><a href="/data/quality/">Quality</a></li>
-                            <li className="section">DATA MODELS</li>
+                <div className='row' style={{'height': 'calc(100% - 110px)'}}>
+                    <div className='col-md-2'>
+                        <ul className='nav nav-pills nav-stacked'>
                             {dataModelLinks}
                         </ul>
                     </div>
 
-                    <div className="col-md-10">
-                        {content}
+                    <div className='col-md-10 fixed-height'>
+                        <DataModel 
+                             key={modelName + '_' + version}
+                             name={modelName}
+                             version={version}
+                             label={activeModel ? activeModel.label : ''}
+                             description={activeModel ? activeModel.description: ''}
+                             tables={activeModel ? activeModel.tables : []}
+                             activeTable={this.props.activeTable}
+                             activeField={this.props.activeField} 
+                             url={activeModel ? activeModel.url : '#'} 
+                             etlConventions={this.props.etlConventions}
+                             siteComments={this.props.siteComments}
+                             dqa={this.props.dqa}/>
                     </div>
                 </div>
             </Page>
         );
     }
 });
-
 
 module.exports = Data;
