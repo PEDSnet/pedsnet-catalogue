@@ -1,4 +1,4 @@
-/* global module, require, console */
+/* global module, require, console, pkg, __dirname */
 
 var webpack = require('webpack'),
 	shell = require('shelljs');
@@ -17,7 +17,6 @@ var config = {
     distDir: 'dist',
     cdnDir: 'cdn',
     nodeDir: 'node_modules',
-    bowerDir: 'bower_components',
 
     serve: {
         build: {
@@ -48,7 +47,6 @@ var config = {
             tasks: ['sync:build'],
             files: [
                 '<%= srcDir %>/**/*',
-                '<%= bowerDir %>/**/*'
             ]
         },
         sass: {
@@ -202,7 +200,7 @@ var config = {
         build: {
             files: [{
                 expand: true,
-                src: ['bower.json', 'package.json'],
+                src: ['package.json'],
                 dest: '<%= buildDir %>'
             }, {
                 expand: true,
@@ -230,7 +228,7 @@ var config = {
                 dest: '<%= distDir %>'
             }, {
                 expand: true,
-                src: ['bower.json', 'package.json'],
+                src: ['package.json'],
                 dest: '<%= distDir %>'
             }, {
                 expand: true,
@@ -502,9 +500,7 @@ module.exports = function(grunt) {
 
         replaceVersion('src/js/main.js', current, pkg.version);
 
-        ['package.json', 'bower.json'].map(function(mod) {
-            return changeVersion(mod, pkg.version);
-        });
+        changeVersion('package.json', pkg.version);
     });
 
     grunt.registerTask('bump-patch', 'Bumps version to next patch-release', function() {
@@ -528,11 +524,9 @@ module.exports = function(grunt) {
 
         replaceVersion('src/js/main.js', current, pkg.version);
 
-        ['package.json', 'bower.json'].map(function(mod) {
-            changeVersion(mod, pkg.version);
-        });
+        changeVersion('package.json', pkg.version);
 
-        run('git add bower.json package.json src/js/main.js');
+        run('git add package.json src/js/main.js');
 
         var versionString = [version.major, version.minor, version.patch].join('.');
 
@@ -540,7 +534,7 @@ module.exports = function(grunt) {
     });
 
     grunt.registerTask('tag-release', 'Create a release on master', function() {
-        run('git add bower.json package.json src/js/main.js');
+        run('git add package.json src/js/main.js');
         run('git commit -s -m "' + pkg.version + ' Release"');
         run('git tag ' + pkg.version);
     });
