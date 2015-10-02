@@ -117,7 +117,13 @@ var config = {
             output: {
                 path: distDir,
                 filename: 'js/[name].js'
-            }
+            },
+
+            plugins: [
+                // Combine vendor scripts.
+                new webpack.optimize.CommonsChunkPlugin('vendors', 'js/vendors.js'),
+                new webpack.optimize.UglifyJsPlugin()
+            ],
         }
     },
 
@@ -461,7 +467,7 @@ module.exports = function(grunt) {
         'clean:dist',
         'sass:dist',
         'copy:dist',
-        'clean:postdist'
+        'webpack:dist',
     ]);
 
     grunt.registerTask('cdn', 'Creates a build for CDN distribution', [
