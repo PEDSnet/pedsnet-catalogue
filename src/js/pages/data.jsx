@@ -10,19 +10,20 @@ var client = require('../client'),
 
 var Data = React.createClass({
     propTypes: {
-        modelName: React.PropTypes.string.isRequired,
-        modelAllVersions: React.PropTypes.object,
         activeTable: React.PropTypes.string,
         activeField: React.PropTypes.string,
-        version: React.PropTypes.string,
-        etlConventions: React.PropTypes.string,
-        siteComments: React.PropTypes.object,
         dqa: React.PropTypes.object,
+        dqaDict: React.PropTypes.object,
+        etlConventions: React.PropTypes.string,
+        modelAllVersions: React.PropTypes.object,
+        modelName: React.PropTypes.string.isRequired,
+        siteComments: React.PropTypes.object,
+        version: React.PropTypes.string
     },
 
     getDefaultProps: function() {
         return {
-            modelAllVersions: {},
+            modelAllVersions: {}
         };
     },
 
@@ -39,7 +40,7 @@ var Data = React.createClass({
         var versionList = _.map(versions, function(ver) {
             return (
                 <li key={modelName+ver} className = {ver === version ? 'active' : ''}>
-                     <a className='model-version-link' href={'/data/'+modelName+'/'+ver}>{ver}</a>
+                     <a className='model-version-link' href={'/model/'+modelName+'/'+ver}>{ver}</a>
                 </li>
             );
         });
@@ -59,7 +60,7 @@ var Data = React.createClass({
                     <div className='panel panel-default'>
                         <div className={'panel-heading data-model-heading' + (isActive ? ' active' : '')}>
                             <h4 className='panel-title'>
-                                <a href={'/data/'+model+'/'+(isActive?version:'')} className = {!isActive ? 'collapsed' : ''}>{model}</a>
+                                <a href={'/model/'+model+'/'+(isActive?version:'')} className = {!isActive ? 'collapsed' : ''}>{model}</a>
                             </h4>
                         </div>
                         {versionsDropdown}
@@ -89,6 +90,7 @@ var Data = React.createClass({
                 <div className='row' style={{'height': 'calc(100% - 110px)'}}>
                     <div className='col-md-2'>
                         <ul className='nav nav-pills nav-stacked'>
+                            <li className="section">DATA MODELS</li>
                             {dataModelLinks}
                         </ul>
                     </div>
@@ -106,7 +108,8 @@ var Data = React.createClass({
                              url={activeModel ? activeModel.url : '#'} 
                              etlConventions={this.props.etlConventions}
                              siteComments={this.props.siteComments}
-                             dqa={this.props.dqa}/>
+                             dqa={this.props.dqa}
+                             dqaDict={this.props.dqaDict}/>
                     </div>
                 </div>
             </Page>

@@ -13,14 +13,14 @@ var Table = React.createClass({
         parent: React.PropTypes.object,
         isActive: React.PropTypes.bool,
         isCollapsed: React.PropTypes.bool,
-        handleClick: React.PropTypes.func.isRequired,
+        handleClick: React.PropTypes.func.isRequired
     },
 
     getDefaultProps: function() {
         return {
             fields: [],
             isCollapsed: true,
-            isActive: false,
+            isActive: false
         };
     },
 
@@ -50,13 +50,14 @@ var Table = React.createClass({
         });
         
         var fieldsElement;
-        if(!this.props.isCollapsed) {
-            fieldsElement = 
+        if (!this.props.isCollapsed) {
+            fieldsElement = (
                 <div>
                     <div className='list-group table-field-list'>
                         <ul className='nav nav-pills nav-stacked'>{fields}</ul>
                     </div>
                 </div>
+            );
         }
         
         var url = router.reverse(model, version, tblName);
@@ -66,15 +67,15 @@ var Table = React.createClass({
                 <div className='panel panel-default'>
                     <div className={'panel-heading' + (this.props.isActive ? ' active' : '')}>
                         <h4 className='panel-title'>
-                            <a onClick = {this.props.handleClick} href={url} 
-                               className = {this.props.isCollapsed ? 'collapsed' : ''}>{tblName}</a>
+                            <a onClick={this.props.handleClick} href={url} 
+                               className={this.props.isCollapsed ? 'collapsed' : ''}>{tblName}</a>
                         </h4>
                     </div>
                     {fieldsElement}
                 </div>
             </div>
         );
-    },
+    }
 });
 
 
