@@ -5,140 +5,160 @@ var FixedDataTable = require('fixed-data-table'),
     Column = FixedDataTable.Column,
     Table = FixedDataTable.Table;
 
+var Helper = require('./table-helper');
+
 var isColumnResizing;
-var width = 70;
-var columnWidths = {
-    code: width,
-    desc: 3*width,
-    status: 2*width,
-    num: width,
-};
+var width = 80;
 
 var SortTypes = {
     ASC: 'ASC',
-    DESC: 'DESC',
+    DESC: 'DESC'
 };
         
 var DQA = React.createClass({
     propTypes: {
-        content: React.PropTypes.string,
-        width: React.PropTypes.number,
+        aggregated: React.PropTypes.bool,
         data: React.PropTypes.object,
+        dict: React.PropTypes.object
     },
 
     getDefaultProps: function() {
         return {
-            content: '',
-            width: 500,
+            aggregated: false,
             data: {},
+            dict: {}
         };
     },
 
     getInitialState: function() {
         return {
+            columnWidths: {
+                code: width,
+                desc: 3*width,
+                status: 2*width,
+                sites: 3*width,
+            },
             isCollapsed: false,
-            rows: this._getRows(),
-            sortBy: null,
-            sortDir: null,
+            rows: {},
+            sortBy: 'code',
+            sortDir: SortTypes.ASC,
+            tableWidth: 500
         };
     },
 
-    _getRows: function() {
+    _getRows: function(props, sortBy) {
         var code;
+        var desc;
         var rows = [];
         var status;
-        var numSites;
+        var sites;
 
-        for(code in this.props.data) {
-            for(status in this.props.data[code]) {
-                numSites = this.props.data[code][status].length;
-                rows.push([code, '', status, numSites]);
+        if (!sortBy) {
+            sortBy = this.state.sortBy;
+        }
+
+        for (code in props.data) {
+            desc = props.dict[code]? props.dict[code].desc : '';
+
+            for (status in props.data[code]) {
+                if (this.props.aggregated) {
+                    sites = [];
+                    for (site in props.data[code][status]) {
+                        sites.push(site + '(' + props.data[code][status][site].length + ')');
+                    }
+                }
+                else {
+                    sites = props.data[code][status].map(function(obj) {
+                        return obj.site;
+                    });
+                }
+
+                // if the table is sorted by site, list sites individually;
+                // if the table is sorted by anything other than site, 
+                // keep sites grouped by (code + status)
+                if (sortBy === 'sites') {
+                    sites.forEach(function(site) {
+                        rows.push({
+                            code: code,
+                            desc: desc,
+                            status: status,
+                            sites: site
+                        });
+                    });
+                }
+                else {
+                    sites = sites.reduce(function(a,b) {
+                        return a + ', ' + b;
+                    });
+
+                    rows.push({
+                        code: code,
+                        desc: desc,
+                        status: status,
+                        sites: sites
+                    });
+                }
             }
         }
         return rows;
     },
 
+    componentWillReceiveProps: function(nextProps) {
+        this.setState({
+            rows: this._getRows(nextProps)
+        })
+    },
+
+    componentWillMount: function() {
+        this.setState({
+            rows: this._getRows(this.props)
+        })
+    },
+
     componentDidMount: function() {
-        this._sortRowsBy(0);
+        // set a timeout for updating width, otherwise everything on the page gets
+        // re-mounted on any navigation. I don't quite understand why, but somehow 
+        // this is caused by the fact that _updateWidth accesses dimentions of an element.
+        setTimeout(Helper.updateWidth(this));
+
+        Helper.addResizeListener(this);
     },
 
-    _onColumnResizeEndCallback: function(newColumnWidth, dataKey) {
-        columnWidths[dataKey] = newColumnWidth;
-        isColumnResizing = false;
-        this.forceUpdate(); // don't do this, use a store and put into this.state! TODO
-    },
-
-    _sortRowsBy: function(cellDataKey) {
+    _sortRowsBy: function(sortBy) {
         var sortDir = this.state.sortDir;
-        var sortBy = cellDataKey;
 
+        // if we are sorting by the same column as we sorted last time,
+        // reverse the sort order;
+        // otherwise pick the default (ascending) order.
         if (sortBy === this.state.sortBy) {
           sortDir = this.state.sortDir === SortTypes.ASC ? SortTypes.DESC : SortTypes.ASC;
-        } else {
-          sortDir = SortTypes.DESC;
+        }
+        else {
+          sortDir = SortTypes.ASC;
         }
         
-        var rows = this.state.rows.slice();
+        var rows = this._getRows(this.props, sortBy).slice();
         rows.sort(function(a, b) {
-        var sortVal = 0;
+            var sortVal = 0;
 
-        /*
-        if (sortBy === 0) {
-            var validValues = ['high', 'medium', 'low'];
-
-            if (validValues.indexOf(a[sortBy])<0 && validValues.indexOf(b[sortBy])<0) {
-                // if we got unexpected values, sort them alphabetically
-                if (a[sortBy] > b[sortBy]) {
-                    sortVal = 1;
-                }
-                if (a[sortBy] < b[sortBy]) {
-                    sortVal = -1;
-                }
-            } else if (validValues.indexOf(a[sortBy])<0) {
-                // a valid value is greater than an invalid one
-                sortVal = -1;
-            } else if (validValues.indexOf(b[sortBy])<0) {
-                // a valid value is greater than an invalid one
-                sortVal = 1;
-            } else if (a[sortBy] === b[sortBy]) {
-                sortVal = 0;
-            } else if (a[sortBy] === 'high') {
-                sortVal = 1;
-            } else if (b[sortBy] === 'high') {
-                sortVal = -1;
-            } else if (a[sortBy] === 'medium') {
-                sortVal = 1;
-            } else if (b[sortBy] === 'medium') {
-                sortVal = -1;
-            }
-        } else {
             if (a[sortBy] > b[sortBy]) {
                 sortVal = 1;
             }
-            if (a[sortBy] < b[sortBy]) {
+            else if (a[sortBy] < b[sortBy]) {
                 sortVal = -1;
             }
-        }
-        */
 
-        if (a[sortBy] > b[sortBy]) {
-            sortVal = 1;
-        }
-        else if (a[sortBy] < b[sortBy]) {
-            sortVal = -1;
-        }
+            if (sortDir === SortTypes.DESC) {
+                sortVal = sortVal * -1;
+            }
 
-        if (sortDir === SortTypes.DESC) {
-            sortVal = sortVal * -1;
-        }
-
-        return sortVal;
+            return sortVal;
         });
         
         this.setState({
-          rows:rows,
+          rows: rows,
           sortBy: sortBy,
-          sortDir: sortDir,
+          sortDir: sortDir
         });
     },    
 
@@ -146,10 +166,6 @@ var DQA = React.createClass({
         return (
           <a onClick={this._sortRowsBy.bind(null, cellDataKey)}>{label}</a>
         );
-    },
-
-    _rowGetter: function (rowIndex) {
-        return this.state.rows[rowIndex];
     },
 
     render: function() {
@@ -160,57 +176,59 @@ var DQA = React.createClass({
         var sortDirArrow = '';
     
         if (this.state.sortDir !== null){
-          sortDirArrow = this.state.sortDir === SortTypes.DESC ? ' ↓' : ' ↑';
+          sortDirArrow = this.state.sortDir === SortTypes.ASC ? (' ' + String.fromCharCode(9660)) : 
+                                                                (' ' + String.fromCharCode(9650));
         }
 
         var contents = this.state.isCollapsed ? null:
             <Table
                 rowHeight={rowHeight}
-                rowGetter={this._rowGetter}
+                rowGetter={Helper.rowGetter(this)}
                 rowsCount={numRows}
-                width={this.props.width}
+                width={this.state.tableWidth}
                 height={headerHeight + Math.min(11,numRows+0.5)*rowHeight + 2}
                 headerHeight={headerHeight}
                 overflowX='auto'
                 overflowY='auto'
                 isColumnResizing={isColumnResizing}
-                onColumnResizeEndCallback={this._onColumnResizeEndCallback}
+                onColumnResizeEndCallback={Helper.onColumnResizeEndCallback(this, isColumnResizing)}
                 >
 
                 <Column
-                    width={columnWidths['code']}
+                    width={this.state.columnWidths['code']}
                     isResizable={true}
-                    dataKey={0}
+                    dataKey={'code'}
+                    fixed={true}
                     headerRenderer={this._renderHeader}
-                    label={'Code' + (this.state.sortBy === 0 ? sortDirArrow : '')}
-               />
-                <Column
-                    width={columnWidths['desc']}
-                    isResizable={true}
-                    dataKey={1}
-                    headerRenderer={this._renderHeader}
-                    label={'Description' + (this.state.sortBy === 1 ? sortDirArrow : '')}
+                    label={'Code' + (this.state.sortBy === 'code' ? sortDirArrow : '')}
                 />
                 <Column
-                    width={columnWidths['status']}
+                    width={this.state.columnWidths['desc']}
                     isResizable={true}
-                    dataKey={2}
+                    dataKey={'desc'}
                     headerRenderer={this._renderHeader}
-                    label={'Status' + (this.state.sortBy === 2 ? sortDirArrow : '')}
+                    label={'Description' + (this.state.sortBy === 'desc' ? sortDirArrow : '')}
                 />
                 <Column
-                    width={columnWidths['num']}
+                    width={this.state.columnWidths['status']}
                     isResizable={true}
-                    dataKey={3}
+                    dataKey={'status'}
                     headerRenderer={this._renderHeader}
-                    label={'# sites' + (this.state.sortBy === 3 ? sortDirArrow : '')}
+                    label={'Status' + (this.state.sortBy === 'status' ? sortDirArrow : '')}
+                />
+                <Column
+                    width={this.state.columnWidths['sites']}
+                    isResizable={true}
+                    dataKey={'sites'}
+                    headerRenderer={this._renderHeader}
+                    label={'Sites' + (this.state.sortBy === 'sites' ? sortDirArrow : '')}
                 />              
             </Table>
         
         return (
             <div className='panel-group dqa'>
-                <div id='dqaContainer' className='panel panel-default'>
-                    <div className='panel-heading' onClick={this.handleClick}>
+                <div id='tableContainer' className='panel panel-default'>
+                    <div className='panel-heading' onClick={Helper.clickHandler(this)}>
                         <h4 className='panel-title'>
                             <span className = {this.state.isCollapsed ? 'collapsed' : ''}>Data Quality</span>
                         </h4>
@@ -219,14 +237,7 @@ var DQA = React.createClass({
                 </div>
             </div>
         );
-    },
-
-    handleClick: function() {
-        this.setState({
-            isCollapsed : !this.state.isCollapsed
-        });
-    },
+    }
 });
-
 
 module.exports = DQA;
