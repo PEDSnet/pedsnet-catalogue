@@ -40,7 +40,18 @@ Open the browser to `localhost:8125`.
 
 For deployment, Docker and Compose must be installed.
 
-
 ```
 docker-compose up -d
+```
+
+## Docker
+
+### Push Image to Docker Registry
+
+This requires you to be authenticated with the Docker Registry (one time) and authorized to push images.
+
+```
+grunt dist
+docker build -t pedsnet/catalogue .
+docker push pedsnet/catalogue
 ```
