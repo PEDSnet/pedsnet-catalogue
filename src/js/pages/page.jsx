@@ -4,9 +4,9 @@ var React = require('react');
 var Page = React.createClass({
     render: function() {
         return (
-            <div className='container-fluid fixed-height'>
-                <div className='row fixed-height'>
-                    <div className='col-md-11 col-md-offset-05 fixed-height'>
+            <div className='container-fluid'>
+                <div className='row'>
+                    <div className='col-md-11 col-md-offset-05'>
                         {this.props.children}
                     </div>
                 </div>
