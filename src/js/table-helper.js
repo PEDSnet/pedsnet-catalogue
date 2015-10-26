@@ -53,12 +53,66 @@ var clickHandler = function(table) {
     };
 };
 
+var status = {
+    'active': {
+        sortOrder: -1,
+        desc: 'Total number of issues with New, Under Review, and Solution Proposed status.'
+    },
+
+    'new': {
+        sortOrder: 0,
+        desc: 'The issue has been identified by the DCC but has not yet been reviewed by the site.'
+    },
+    'under review': {
+        sortOrder: 1,
+        desc: 'The site is currently investigating the issue.'
+    },
+    'solution proposed': {
+        sortOrder: 2,
+        desc: ('The site has investigated the issue, and ' +
+               'a consensus about the solution has been reached; ' +
+               'the site has agreed to fix the issue in the next data cycle(s).')
+    },
+    'default': {
+        sortOrder: 10
+    },
+    'persistent': {
+        sortOrder: 20,
+        label: 'inherent',
+        desc: ('The issue has been investigated, ' +
+               'and it was concluded that it cannot be fixed ' +
+               'due to the inherent characteristics of the data.')
+    },
+    // 'inherent' is actually just a label for 'persistent', but 
+    // listing it here as well makes sorting simpler.
+    'inherent': {
+        sortOrder: 20,
+        label: 'inherent',
+        desc: ('The issue has been investigated, ' +
+               'and it was concluded that it cannot be fixed ' +
+               'due to the inherent characteristics of the data.')
+    },
+    'withdrawn': {
+        sortOrder: 30,
+        desc: 'False alarm.'
+    },
+    'non-issue': {
+        sortOrder: 31,
+        desc: 'False alarm.'
+    },
+    'closed': {
+        sortOrder: 32,
+        desc: ''
+    }
+};
+
 
 module.exports = {
     addResizeListener: addResizeListener,
     clickHandler: clickHandler,
     onColumnResizeEndCallback: onColumnResizeEndCallback,
     rowGetter: rowGetter,
+    statusList: status,
     updateWidth: updateWidth
 };
 

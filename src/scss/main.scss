@@ -1,22 +1,14 @@
-$spacing: 18px;
-$font-size: 14px;
+$spacing: 40px;
+$font-size: 16px;
 $radius: 2px;
 $monospace: Menlo, Monaco, Consolas, 'Courier New', monospace;
 $primary: #313a86;
 $primary-light: #434EB6;
 
 body {
-    padding-top: 80px;
+    padding-top: 50px;
     font-weight: 200;
     font-size: $font-size;
-}
-
-html, body, .fixed-height {
-    height: 100%;
-}
-
-main {
-    height: calc(100% - 20px)
 }
 
 p {
@@ -102,31 +94,71 @@ a.required {
 header {
     position: fixed;
 
-    // Offset by the Bootstrap gutter width
-    top: 15px;
-    left: 15px;
-    right: 15px;
+    top: 0;
+    left: 0;
+    right: 0;
 
     z-index: 1000;
 
     font-weight: 400;
 
-    background-color: #eee;
+    background-color: #f5f5f5;
 
     border-radius: $radius;
-    border-bottom: 1px solid #ddd;
-    border-right: 1px solid #ddd;
+    border-bottom: 1px solid #eee;
+    border-right: 1px solid #eee;
 
-    a:link, a:visited {
-        padding: $spacing;
-        outline: none;
-        color: #555;
-        text-decoration: none;
-        //vertical-align: middle;
+    .header-row {
+        padding: 10px $spacing;
+
     }
 
-    a:hover, a:active {
+    .btn-primary {
+        padding: 10px 20px;
+        margin: 0;
+        margin-right: 5px;
         color: $primary-light;
+        background-color: #eee;
+        border-color: #eee;
+        text-decoration: none;
+        -webkit-box-shadow: none;
+        box-shadow: none
+    }
+
+    .btn-primary:focus,
+    .btn-primary:hover {
+        background-color: $primary-light;
+        color: #fff;
+    }
+
+    .btn-primary:active,
+    .btn-primary:active:focus,
+    .btn-primary:active:hover,
+    .btn-primary.active,
+    .btn-primary.active:focus,
+    .btn-primary.active:hover {
+        background-color: #eee;
+        color: $primary-light;
+        border-color: $primary-light;
+    }
+
+    #search {
+        text-decoration: none;
+    }
+
+    #path span {
+        color: $primary-light;
+        padding: 0 3px 0 3px;
+    }
+
+    #path>a:link, .path>a:visited {
+        padding: 0;
+        color: $primary-light;
+        text-decoration: none;
+    }
+
+    #path>a:hover, .path>a:active {
+        text-decoration: underline;
     }
 
     ul {
@@ -148,11 +180,13 @@ header {
     a.brand {
         color: $primary-light;
         display: inline-block;
-        font-weight: 600;
-        padding: 12px 18px;
-
+        font-weight: 400;
+        font-size: 20px;
+        outline: none;
+        text-decoration: none;
         img {
             height: 36px;
+            //vertical-align: text-bottom;
         }
     }
 }
@@ -200,10 +234,6 @@ header {
 
 .title-link > a {
     text-decoration: none;
-}
-
-.scrollable {
-    overflow-y: auto;
 }
 
 .table .data {
@@ -262,4 +292,52 @@ header {
 
 .col-md-offset-05 {
     margin-left: 4.166666665%;
+}
+
+.margined {
+    margin: 20px;
+}
+
+.text-box {
+    border: 1px solid #ddd;
+    overflowX: auto;
+}
+
+.bar {
+    height: 10px;
+    display: inline-block;
+    position: relative;
+    vertical-align: baseline;
+    border-radius: $radius;
+    border: 1px solid $primary-light;
+    margin-left: 5px;
+    margin-right: 5px;
+}
+
+.number {
+    width: 25px;
+    display: inline-block;
+    position: relative;
+    transform: translateY(20%);
+    overflow: hidden;
+}
+
+.badge {
+    margin-left: 5px;
+    transform: translateY(-15%);
+}
+
+.sort-arrow {
+    float: right;
+    margin-right: 10px;
+    transform: translateY(20%);
+}
+
+.title i {
+    color: $primary-light;
+    font-weight: 400;
+}
+
+.title {
+    font-weight: 400;
 }
