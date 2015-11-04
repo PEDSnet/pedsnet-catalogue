@@ -151,8 +151,7 @@ page('/models/:model?/:version?/:arg1?/:arg2?/:arg3*', function(cxt) {
     if (['tables', 'etl', 'dqa', ''].indexOf(arg1) >= 0) {
         title = <Title
             model={model}
-            version={version}
-            site={arg2}/>;
+            version={version}/>;
 
         tabList = ['tables', 'etl', 'dqa'];
         key = model + '_' + version + '_' + arg1;
@@ -193,6 +192,12 @@ page('/models/:model?/:version?/:arg1?/:arg2?/:arg3*', function(cxt) {
             );
         }
         else if (arg1 === 'dqa') {
+            title = <Title
+                model={model}
+                version={version}
+                site={arg2}
+                activeTab='dqa'/>;
+
             component = React.render(
                 <DQAScores 
                     key={key}
@@ -242,13 +247,31 @@ page('/models/:model?/:version?/:arg1?/:arg2?/:arg3*', function(cxt) {
 
             var urlDQA = resources.getDQA_URL(model, version);
             
-            // site-specific DQA requested
+            // site-specific DQA requested:
+            // first fetch the list of available sites (for the title),
+            // and then adjust the url, so that the next fetch gets us this site's data
             if (arg1 === 'dqa' && arg2) {
-                urlDQA += '/' + arg2;
+                client.fetch({url: urlDQA, cache: true}).then(function(resp) {
+                    if (resp.data && !_.isEmpty(resp.data)) {
+                        title = <Title
+                            model={model}
+                            version={version}
+                            site={arg2}
+                            sites={Object.keys(resp.data)}
+                            activeTab='dqa'/>;
+
+                        component.setProps({
+                            title: title
+                        });
+                    }
+                }).catch(function() {});
 
                 component.setProps({
                     tabList: ['dqa']
                 });
+
+                // adjust the url so that the next block fetches this site's data
+                urlDQA += '/' + arg2;
             }
 
             client.fetch({url: urlDQA, cache: true}).then(function(resp) {
@@ -278,8 +301,7 @@ page('/models/:model?/:version?/:arg1?/:arg2?/:arg3*', function(cxt) {
     title = <Title
         model={model}
         version={version}
-        table={arg1}
-        site={arg3}/>;
+        table={arg1}/>;
 
     tabList = ['fields', 'etl', 'dqa'];
     key = model + '_' + version + '_' + arg1 + '_' + arg2;
@@ -315,7 +337,6 @@ page('/models/:model?/:version?/:arg1?/:arg2?/:arg3*', function(cxt) {
                 model={model}
                 version={version}
                 table={arg1}
-                site={arg3}
                 activeTab='etl'/>;
 
             component = React.render(

@@ -38,6 +38,7 @@
     "promise-polyfill": "^2.0.2",
     "react": "^0.13.1",
     "react-hot-loader": "^1.2.5",
+    "react-bootstrap": "^0.26.4",
     "sass-loader": "^0.6.0",
     "shelljs": "^0.4.0",
     "fixed-data-table": "^0.4.6",
