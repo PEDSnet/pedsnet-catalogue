@@ -2,19 +2,14 @@ var resources = require('./resources');
 
 
 var reverse = function() {
-	if (arguments.length === 0) {
-        return '/';
-    }
+    var addr = '';
 
-	// invalid model name
-    if (arguments.length >0 && resources.models.indexOf(arguments[0]) < 0) {
-        return '/';
-    }
+    if (arguments.length >0 && resources.models.indexOf(arguments[0]) >= 0) {
+        addr = '/model/';
 
-    var addr = '/models/';
-
-    for (var i=0; i<arguments.length; i++) {
-        addr += (arguments[i] + '/');
+        for (var i=0; i<arguments.length; i++) {
+            addr += (arguments[i] + '/');
+        }
     }
 
     return addr;

@@ -1,0 +1,54 @@
+/* sidenav */
+.sidenav {
+    padding-left: 20px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+/* all links */
+.sidenav .nav>li>a {
+    color: #999;
+    border-left: 2px solid transparent;
+    padding: 4px 20px;
+    font-size: 13px;
+    font-weight: 400;
+}
+
+/* nested links */
+.sidenav .nav .nav>li>a {
+    padding-top: 1px;
+    padding-bottom: 1px;
+    padding-left: 30px;
+    font-size: 12px;
+}
+
+/* active & hover links */
+.sidenav .nav>.active>a,
+.sidenav .nav>li>a:hover,
+.sidenav .nav>li>a:focus {
+    color: #313a86;
+    text-decoration: none;
+    background-color: transparent;
+    border-left-color: #313a86;
+}
+/* all active links */
+.sidenav .nav>.active>a,
+.sidenav .nav>.active:hover>a,
+.sidenav .nav>.active:focus>a {
+    font-weight: 700;
+}
+/* nested active links */
+.sidenav .nav .nav>.active>a,
+.sidenav .nav .nav>.active:hover>a,
+.sidenav .nav .nav>.active:focus>a {
+    font-weight: 500;
+}
+
+/* hide inactive nested list */
+.sidenav .nav ul.nav {
+    display: none;
+}
+/* show active nested list */
+.sidenav .nav>.active>ul.nav {
+    display: block;
+}

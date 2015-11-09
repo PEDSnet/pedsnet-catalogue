@@ -3,10 +3,7 @@ var React = require('react'),
 
 var FixedDataTable = require('fixed-data-table'),
     Column = FixedDataTable.Column,
-    Page = require('./pages/page'),
-    Table = FixedDataTable.Table,
-    Tabs = require('./tabs'),
-    Title = require('./title');
+    Table = FixedDataTable.Table;
 
 var Helper = require('./table-helper');
 
@@ -16,110 +13,80 @@ var SortTypes = {
     ASC: 'ASC',
     DESC: 'DESC'
 };
-      
+
+var Status = {
+    'new': {
+        sortOrder: 0,
+        desc: 'The issue has been identified by the Data Coordinating Center.',
+    },
+    'under review': {
+        sortOrder: 1,
+        desc: 'The site has acknowledged that it needs to investigate the issue.',
+    },
+    'solution proposed': {
+        sortOrder: 2,
+        desc: ('The site has investigated the issue, and ' +
+               'a consensus about the solution has been reached; ' +
+               'the site has agreed to fix the issue in the next round.'),
+    },
+    'default': {
+        sortOrder: 10,
+    },
+    'persistent': {
+        sortOrder: 20,
+        label: 'inherent',
+        desc: ('The issue has been investigated, ' +
+               'and it was concluded that it cannot be fixed.'),
+    },
+    'withdrawn': {
+        sortOrder: 30,
+        desc: 'False alarm.  An investigation has concluded this to be a non-issue.',
+    },
+    'non-issue': {
+        sortOrder: 31,
+        desc: 'False alarm.  An investigation has concluded this to be a non-issue.',
+    },
+    'closed': {
+        sortOrder: 32,
+        desc: '',
+    }
+};
+        
 var DQAScores = React.createClass({
     propTypes: {
-        title: React.PropTypes.object,
         columnWidth: React.PropTypes.number,
-        data: React.PropTypes.object,
-        title: React.PropTypes.object,
-        description: React.PropTypes.string,
-        siteSpecific: React.PropTypes.bool,
-        siteName: React.PropTypes.string,
-        baseUrl: React.PropTypes.string,
-        activeTab: React.PropTypes.string,
-        tabList: React.PropTypes.array
+        data: React.PropTypes.object
     },
 
     getDefaultProps: function() {
         return {
-            columnWidth: 230,
-            data: {},
-            siteSpecific: false
+            columnWidth: 130,
+            data: {}
         };
     },
 
     getInitialState: function() {
         return {
             columnWidths: {},
+            isCollapsed: false,
             rows: {},
             sortBy: null,
             sortDir: null,
             statusList: [],
-            tableWidth: 500,
-            enabledTabs: {},
-            maxValue: 100
+            tableWidth: 500
         };
-    },
-    
-    enableTab: function(tab) {
-        this.state.enabledTabs[tab] = true;
-        this.setState({
-            enabledTabs: this.state.enabledTabs
-        });
-    },
-    
-    _renderLink: function(cellData) {
-        // Link to the DQA totals for the given site
-        var url = location.href;
-        // there may or may not be a '#' or a '/' at the end,
-        // so it's easier to just chop off and re-construct the 'dqa' suffix
-        url = url.substring(0, url.indexOf('dqa'));
-        url += 'dqa/' + cellData + '/';
-
-        return <a href={url}>{cellData}</a>;
-    },
-
-    _renderTableLink: function(cellData) {
-        // Link to the DQA information for this table, specific to the given site 
-        var url = location.href;
-        url = url.substring(0, url.indexOf('dqa')-1);
-        url += '/' + cellData + '/dqa/' + this.props.siteName + '/';
-
-        return <a href={url}>{cellData}</a>;
-    },
-
-    _renderBar: function(cellData, cellDataKey,
-                         rowData, rowIndex,
-                         columnData, width) {
-        var value = parseInt(cellData, 10);
-
-        var bar;
-        if (value > 0) {
-            bar = <span style={{'width': (value / this.state.maxValue * (width-60)).toString()+'px'}} className='bar'></span>
-        }
-        return (
-            <span>
-                <span className='number'>{cellData}</span> 
-                {bar}
-            </span>
-        );
-    },
-
-    _calcColumnWidth: function(s) {
-        // TODO actually figure out the length of the string in pixels
-        s = (Helper.statusList[s] && Helper.statusList[s].label) || s;
-        return 11*s.length;
     },
 
     _initRows: function(props) {
         var row;
         var rows = [];
         var score;
-        var maxValue = 0;
-
-        var totals = {};
-        totals['active'] = 0;
-
+        var site;
+        
         // all sites have the same status list, so grab the list from 
         // any of the available sites.
         var anySiteData = props.data[Object.keys(props.data)[0]];
-        
-        var statusList = [];
-        if(anySiteData) {
-            statusList = Object.keys(anySiteData);
-        }
-
+        var statusList = Object.keys(anySiteData);
         var statusWeights = {};
         
         statusList.forEach(function(status) {
@@ -131,38 +98,21 @@ var DQAScores = React.createClass({
         statusWeights['non-issue'] = 0;
         statusWeights['closed'] = 0;
 
-        for (var name in props.data) {
-            row = _.clone(props.data[name]);
+        for (site in props.data) {
+            row = _.clone(props.data[site]);
 
             score = 0;
             for (var key in row) {
                 score += row[key] * statusWeights[key];
-
-                if (row[key] > maxValue) {
-                    maxValue = row[key];
-                }
-
-                if (totals[key]) {
-                    totals[key] += row[key];
-                } 
-                else { 
-                    totals[key] = row[key];
-                }
             }
-            row.active = score;
-            row.name = name;
+            row.score = score;
+            row.site = site;
 
             rows.push(row);
-
-            if (score > maxValue) {
-                maxValue = score;
-            }
-
-            totals['active'] += score;
         }
 
         // initial sort is by score, in descending order
-        var sortBy = 'active';
+        var sortBy = 'score';
         rows.sort(function(a, b) {
             var sortVal = 0;
 
@@ -176,7 +126,7 @@ var DQAScores = React.createClass({
             return sortVal;
         });
     
-        return [rows, totals, maxValue];
+        return rows;
     },
 
     _sortRowsBy: function(sortBy) {
@@ -184,13 +134,13 @@ var DQAScores = React.createClass({
 
         // if we are sorting by the same column as we sorted last time,
         // reverse the sort order;
-        // otherwise pick the default order (ascending for site/table names,
+        // otherwise pick the default order (ascending for site names,
         // descending for scores).
         if (sortBy === this.state.sortBy) {
             sortDir = this.state.sortDir === SortTypes.ASC ? SortTypes.DESC : SortTypes.ASC;
         }
         else {
-            if (sortBy === 'name') {
+            if (sortBy === 'site') {
                 sortDir = SortTypes.ASC;
             }
             else {
@@ -226,41 +176,26 @@ var DQAScores = React.createClass({
         // all sites have the same status list, so grab the list from 
         // any of the available sites
         var anySiteData = props.data[Object.keys(props.data)[0]];
-
-        var statusList = [];
-        if(anySiteData) {
-            statusList = Object.keys(anySiteData);
-        }
-        
-        // For site-specific reports the 'name' column holds table names,
-        // and for non-site-specific reports this column holds site names.
-        // Table names can be long, but site names are pretty short,
-        // so choose column width accordingly.
-        var titleColumnWidth = props.siteSpecific ? 
-                                this._calcColumnWidth('condition_occurrence') :
-                                this._calcColumnWidth('Nationwide');
+        var statusList = Object.keys(anySiteData);
+        var w = props.columnWidth;
 
         var columnWidths = {
-            name: titleColumnWidth,
-            active: this.props.columnWidth
+            site: w,
+            score: w
         };
 
         statusList.forEach(function(status) {
-            columnWidths[status] = this.props.columnWidth;
-        }.bind(this));
-        
-        var ret = this._initRows(props);
-        var rows = ret[0];
-        var totals = ret[1];
-        var maxValue = ret[2];
+            columnWidths[status] = w;
+        });
+
+        var rows = this._initRows(props);
+
         return {
             columnWidths: columnWidths,
             rows: rows,
-            sortBy: 'active',
+            sortBy: 'score',
             sortDir: SortTypes.DESC,
-            statusList: statusList,
-            columnTotals: totals,
-            maxValue: maxValue
+            statusList: statusList
         };
     },
 
@@ -283,51 +218,12 @@ var DQAScores = React.createClass({
 
     _renderHeader: function(label, cellDataKey) {
         var tooltip_text = '';
-        var sortSymbol;
-
-        // we added a '#' and a suffix to force header re-rendering.
-        // get rid of this.
-        label = label.split('#')[0];
-
-        if (cellDataKey !== this.state.sortBy) {
-            sortSymbol = 'fa fa-sort';
+        if (Status[cellDataKey]) {
+            tooltip_text = Status[cellDataKey].desc;
         }
-        else if (this.state.sortDir === SortTypes.ASC) {
-            sortSymbol = 'fa fa-sort-asc';
-        }
-        else {
-            sortSymbol = 'fa fa-sort-desc';
-        }
-
-        if (Helper.statusList[cellDataKey]) {
-            tooltip_text = Helper.statusList[cellDataKey].desc;
-        }
-
-        // TODO figure out how to get the tooltip to show up on click,
-        // not on hover over. 
-        var info;
-        if (cellDataKey !== 'name') {
-            info =
-                <a data-toggle='tooltip' title={tooltip_text} trigger='click'>
-                    <i className='fa fa-info-circle' style={{'marginLeft': '5px'}}></i>
-                </a>;
-        } 
-
-        var badge;
-        var total = this.state.columnTotals[cellDataKey];
-        if (cellDataKey !== 'name' && total!==undefined) {
-            badge = <span className='badge'>{total}</span>;
-        } 
 
         return (
-            <span>
-                <span style={{'fontWeight': '400'}}>{label}</span>
-                {info}
-                {badge}
-                <a onClick={this._sortRowsBy.bind(null, cellDataKey)}>
-                    <i className={sortSymbol + ' sort-arrow'}></i>
-                </a>
-            </span>
+          <a onClick={this._sortRowsBy.bind(null, cellDataKey)} data-toggle='tooltip' title={tooltip_text}>{label}</a>
         );
     },
 
@@ -336,35 +232,38 @@ var DQAScores = React.createClass({
         var rowHeight = 30;
         var headerHeight = 50;
         var numRows = this.state.rows.length || 0;
-        var statusList = Helper.statusList;
         
-        // columns should be displayed in the order specified by statusList[]
+        var sortDirArrow = '';
+    
+        if (this.state.sortDir !== null){
+          sortDirArrow = this.state.sortDir === SortTypes.ASC ? (' ' + String.fromCharCode(9660)) : 
+                                                                (' ' + String.fromCharCode(9650));
+        }
+
+        // columns should be displayed in the order specified by Status[]
         var statusList = _.clone(this.state.statusList).sort(function (a, b) {
             // for columns that don't have a sort order defined, we'll pick the
             // default order that will places them just before the non-issue column(s).
             // This is so that we don't ignore any new status that may get introduced
             // into the reports; this will also let us catch any potential misspellings.
-            if (!(a in statusList)) {
+            if (!(a in Status)) {
                 a = 'default';
             }
-            if (!(b in statusList)) {
+            if (!(b in Status)) {
                 b = 'default';
             }
-            if (statusList[a].sortOrder > statusList[b].sortOrder) { 
+            if (Status[a].sortOrder > Status[b].sortOrder) { 
                 return 1;
             }
-            else if (statusList[a].sortOrder < statusList[b].sortOrder) {
+            else if (Status[a].sortOrder < Status[b].sortOrder) {
                 return -1;
             }
             return 0;
         });
 
         var statusColumns = _.map(statusList, function(status) {
-            var label = (Helper.statusList[status] && Helper.statusList[status].label) || status;
+            var label = (Status[status] && Status[status].label) || status;
 
-            // make sure there's a change to the column label when sort direction changes.
-            // This is a hack, but I don't know how else to trigger header re-rendering 
-            // besides changing the label. 
             return (
                 <Column
                     key={status}
@@ -372,87 +271,53 @@ var DQAScores = React.createClass({
                     isResizable={true}
                     dataKey={status}
                     headerRenderer={this._renderHeader}
-                    label={label + '#' + (this.state.sortBy === status ? this.state.sortDir : '')}
-                    cellRenderer={this._renderBar}
+                    label={label + (this.state.sortBy === status ? sortDirArrow : '')}
                 />
             );
         }.bind(this));
 
-        // For site-specific reports the 'name' column holds table names,
-        // and for non-site-specific reports this column holds site names.
-
-        var nameColumnLabel;
-        var nameColumnRenderer;
-
-        if(!this.props.siteSpecific) {
-            nameColumnLabel = 'site';
-            nameColumnRenderer = this._renderLink;
-        }
-        else {
-            nameColumnLabel = 'table';
-            nameColumnRenderer = this._renderTableLink;
-        }
-
-        var contents;
+        var contents = this.state.isCollapsed ? null:
+            <Table
+                rowHeight={rowHeight}
+                rowGetter={Helper.rowGetter(this)}
+                rowsCount={numRows}
+                width={this.state.tableWidth}
+                height={headerHeight + Math.min(11,numRows+0.5)*rowHeight + 2}
+                headerHeight={headerHeight}
+                overflowX='auto'
+                overflowY='auto'
+                isColumnResizing={isColumnResizing}
+                onColumnResizeEndCallback={Helper.onColumnResizeEndCallback(this, isColumnResizing)}
+                >
+                <Column
+                    width={this.state.columnWidths['site'] || colWidth}
+                    isResizable={true}
+                    dataKey={'site'}
+                    fixed={true}
+                    headerRenderer={this._renderHeader}
+                    label={'site' + (this.state.sortBy === 'site' ? sortDirArrow : '')}
+                />
+                <Column
+                    width={this.state.columnWidths['score'] || colWidth}
+                    isResizable={true}
+                    dataKey={'score'}
+                    headerRenderer={this._renderHeader}
+                    label={'active issues' + (this.state.sortBy === 'score' ? sortDirArrow : '')}
+                />
+                {statusColumns}
+            </Table>
         
-        // if the table is empty, don't render the table, but still render 
-        // the 'tableContainer' div because updateWidth() uses 'tableContainer' 
-        // as a reference for correct table width, and updateWidth() is called 
-        // when the element is mounted. 
-        
-        if (!_.isEmpty(this.state.rows)) {
-            contents =
-                <Table
-                    rowHeight={rowHeight}
-                    rowGetter={Helper.rowGetter(this)}
-                    rowsCount={numRows}
-                    width={this.state.tableWidth}
-                    height={headerHeight + (numRows+0.5)*rowHeight + 2}
-                    headerHeight={headerHeight}
-                    overflowX='auto'
-                    isColumnResizing={isColumnResizing}
-                    onColumnResizeEndCallback={Helper.onColumnResizeEndCallback(this, isColumnResizing)}
-                    >
-                    <Column
-                        width={this.state.columnWidths['name'] || colWidth}
-                        isResizable={true}
-                        dataKey={'name'}
-                        fixed={true}
-                        headerRenderer={this._renderHeader}
-                        label={nameColumnLabel + '#' + (this.state.sortBy === 'name' ? this.state.sortDir : '')}
-                        cellRenderer={nameColumnRenderer}
-                    />
-                    <Column
-                        width={this.state.columnWidths['active'] || colWidth}
-                        isResizable={true}
-                        dataKey={'active'}
-                        headerRenderer={this._renderHeader}
-                        label={'active' + '#' + (this.state.sortBy === 'active' ? this.state.sortDir : '')}
-                        cellRenderer={this._renderBar}
-                    />
-                    {statusColumns}
-                </Table>
-        }
-
-        var enabledTabs = Object.keys(this.state.enabledTabs);
-        var tabs = <Tabs 
-            key = {enabledTabs.join('_')}
-            enabledTabs = {enabledTabs}
-            baseUrl = {this.props.baseUrl}
-            activeTab = {this.props.activeTab}
-            tabList = {this.props.tabList}/>;
-
         return (
-            <Page>
-                <div className='margined'>
-                    {this.props.title}
-                    <p>{this.props.description}</p>
-                </div>
-                {tabs}
-                <div id='tableContainer' className='panel-group dqa margined'>
+            <div className='panel-group dqa'>
+                <div id='tableContainer' className='panel panel-default'>
+                    <div className='panel-heading' onClick={Helper.clickHandler(this)}>
+                        <h4 className='panel-title'>
+                            <span className = {this.state.isCollapsed ? 'collapsed' : ''}>Data Quality</span>
+                        </h4>
+                    </div>
                     {contents}
                 </div>
-            </Page>
+            </div>
         );
     }
 });

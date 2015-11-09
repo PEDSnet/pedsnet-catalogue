@@ -1,586 +1,136 @@
 var React = require('react'),
-    page = require('page'),
-    _ = require('underscore');
+    page = require('page');
 
-
-var client = require('./client'),
-    DQA = require('./dqa'),
-    DQAScores = require('./dqa-scores'),
-    Desc = require('./description'),
-    List = require('./list'),
-    Header = require('./header'),
-    MarkedText = require('./marked-text'),
-    Models = require('./pages/models'),
-    Page = require('./pages/page'),
-    resources = require('./resources'),
-    router = require('./router'),
-    Title = require('./title');
-
-// list of models for which ETL and DQA info won't be available;
-// don't bother trying to fetch it.
-var dontFetchETLDQA = {
-    pcornet: true
-};
 
 // Page-level region of the DOM to render in.
 var mainRegion = document.getElementById('main');
-var headerRegion = document.getElementById('header');
 
-var fetchDataModel = function(url) {
-    return new Promise(function(resolve) {
-        client.fetch({url: url, cache: true}).then(function(resp) {
-            var dm = {};
-            for (var i = 0; i < resp.data.length; i++) {
-                dm[resp.data[i].version] = resp.data[i];
-            }
-            resolve(dm);
-        });
-    });
-};
+
+var client = require('./client');
+var resources = require('./resources');
+
+
+// Pages
+var Data = require('./pages/data');
+
 
 page('/', function() {
-    page.redirect('/models/');
+    page.redirect('/model/');
 });
 
 
-page('/models/:model?/:version?/:arg1?/:arg2?/:arg3*', function(cxt) {
+page('/model/:model?/:version?/:table?/:field*', function(cxt) {
     var model = cxt.params.model;
     var table = cxt.params.table;
     var field = cxt.params.field;
     var version = cxt.params.version;
-    var arg1 = cxt.params.arg1;
-    var arg2 = cxt.params.arg2;
-    var arg3 = cxt.params.arg3;
-    var title;
-    var tabList;
-    var key;
 
-    var component;
-    var urlDqaDict = resources.getDQADictURL();
-
-    var header = React.render(
-        <Header/>,
-        headerRegion
-    );
-
-    // if model not specified, list versions for all models;
-    // if model is specified but version isn't, list all versions
-    // for the given model.
-
-    if (!model || !version) {
-        var path;
-        if (model) {
-            path = ['models', model];
+    if (!model) {
+        if (resources.models.length > 0) {
+            page.redirect('/model/'+resources.models[0]+'/');
         }
-        else {
-            path = ['models'];
-        }
+        return;
+    }
 
-        component = React.render(
-            <Models/>,
-            mainRegion
-        );
-        
-        var models = {};
+    var component = React.render(<Data modelName = {model} 
+                                       activeTable = {table} 
+                                       activeField = {field}
+                                       version = {version}/>,
+                                 mainRegion);
 
-        var urlDataModel;
-        if (model) {
-            urlDataModel = resources.getDataModelURL(model);
-        } 
-        else {
-            urlDataModel = resources.getDataModelURL();
-        }
-
-        client.fetch({url: urlDataModel, cache: true}).then(function(resp) {
-            for (var i = 0; i < resp.data.length; i++) {
-                var name = resp.data[i].name;
-                if (!models[name]) {
-                    models[name] = {};
+    var fetchDataModel = function(url) {
+        return new Promise(function(resolve) {
+            client.fetch({url: url, cache: true}).then(function(resp) {
+                var dm = {};
+                for (var i = resp.data.length-1; i >= 0; i--) {
+                    dm[resp.data[i].version] = resp.data[i];
                 }
-                models[name][resp.data[i].version] = resp.data[i];
-            }
-
-            if (!_.isEmpty(models)) {
-                component.setProps({
-                    models: models
-                });
-            }
+                resolve(dm);
+            });
         });
+    };
 
-        return;
-    }
-    
-    // if version === 'current', 
-    // redirect to the latest version.
-    if (version === 'current') {
-        var urlDataModel = resources.getDataModelURL(model);
-        var path = ['models', model];
+    var urlDataModel = resources.urls.dataModel +
+                       (resources.dataModelAliases[model] || model) + '?format=json';
+    fetchDataModel(urlDataModel).then(function(resp) {
+        // if version wasn't specified in the url, redirect to the highest version
+        var versions = Object.keys(resp);
+        if (!version && versions.length>0) {
+            page.redirect('/model/'+model+'/'+versions.sort().reverse()[0]);
+        }
+        else {
+            component.setProps({
+                modelAllVersions: resp
+            });
+        }
+    });
 
-        var versions = [];
-        client.fetch({url: urlDataModel, cache: true}).then(function(resp) {
-            for (var i = 0; i < resp.data.length; i++) {
-                versions.push(resp.data[i].version);
+    if (version) {
+        var urlETL = resources.urls.etl + model + '?version=' + version;
+
+        client.fetch({url: urlETL, cache: true}).then(function(resp) {
+            var etlContent = '';
+            if (table) {
+                if (field) {
+                    etlContent = resp.data.model.tables[table].fields[field].etl_conventions;
+                }
+                else {
+                    etlContent = resp.data.model.tables[table].content;
+                }
+            }
+            else {
+                // model-level etl conventions
+                etlContent = resp.data.model.content;
             }
 
-            if (versions.length > 0) {
-                var v = versions.sort().reverse()[0];
-                if (arg3) {
-                    page.redirect(router.reverse(model, v, arg1, arg2, arg3));
-                    return;
-                }
-                if (arg2) {
-                    page.redirect(router.reverse(model, v, arg1, arg2));
-                    return;
-                }
-                if (arg1) {
-                    page.redirect(router.reverse(model, v, arg1));
-                    return;
-                }
-                page.redirect(router.reverse(model, v));
-            }
-         }).catch(function() {});
-
-        return;
-    }
-
-    // Model-level information
-
-    if (arg1 === undefined) {
-        arg1='';
-    }
-    if (['tables', 'etl', 'dqa', ''].indexOf(arg1) >= 0) {
-        title = <Title
-            model={model}
-            version={version}
-            site={arg2}/>;
-
-        tabList = ['tables', 'etl', 'dqa'];
-        key = model + '_' + version + '_' + arg1;
-
-        if (arg1 === '') {
-            component = React.render(
-                <Desc 
-                    key={key}
-                    baseUrl = {router.reverse(model, version)}
-                    activeTab = {arg1}
-                    tabList = {tabList}
-                    title = {title}/>,
-                mainRegion
-            );
-        }
-        else if (arg1 === 'tables') {
-            component = React.render(
-                <List
-                    key={key}
-                    model={model}
-                    version={version}
-                    baseUrl = {router.reverse(model, version)}
-                    activeTab = {arg1}
-                    tabList = {tabList}
-                    title = {title}/>,
-                mainRegion
-            );
-        }
-        else if (arg1 === 'etl') {
-            component = React.render(
-                <MarkedText 
-                    key={key}
-                    baseUrl = {router.reverse(model, version)}
-                    activeTab = {arg1}
-                    tabList = {tabList}
-                    title = {title}/>,
-                mainRegion
-            );
-        }
-        else if (arg1 === 'dqa') {
-            component = React.render(
-                <DQAScores 
-                    key={key}
-                    baseUrl = {router.reverse(model, version)}
-                    activeTab = {arg1}
-                    tabList = {tabList}
-                    title = {title}/>,
-                mainRegion
-            );
-        }
-
-        var urlDataModel = resources.getDataModelURL(model, version);
-        client.fetch({url: urlDataModel, cache: true}).then(function(resp) {
-            if (resp.data && resp.data.tables && !_.isEmpty(resp.data.tables)) {
-                // only redirect to the default tab here, because now we actually do know
-                // that the info for that tab is actually available.
-                if (arg1 === '') {
-                    page.redirect(router.reverse(model, version, 'tables'));
-                    return;
-                }
-
-                if (arg1 === 'tables') {
-                    component.setProps({
-                        items: resp.data.tables
-                    });
-                }
-
-                component.enableTab('tables');
-            }
+            component.setProps({
+                etlConventions: etlContent
+            });
         }).catch(function() {});
-
-        if (!dontFetchETLDQA[model]) {
-            var urlETL = resources.getETL_URL(model, version);
-            client.fetch({url: urlETL, cache: true}).then(function(resp) {
-                if (resp.data && resp.data.model && resp.data.model.content) {
-                    var content = resp.data.model.content;
-
-                    if (arg1 === 'etl') {
-                        component.setProps({
-                            content: content
-                        });
-                    }
-
-                    component.enableTab('etl');
-                }
-            }).catch(function() {});
-
-            var urlDQA = resources.getDQA_URL(model, version);
-            
-            // site-specific DQA requested
-            if (arg1 === 'dqa' && arg2) {
-                urlDQA += '/' + arg2;
-
-                component.setProps({
-                    tabList: ['dqa']
-                });
-            }
-
-            client.fetch({url: urlDQA, cache: true}).then(function(resp) {
-                if (resp.data && !_.isEmpty(resp.data)) {
-                    if (arg1 === 'dqa') {
-                        component.setProps({
-                            data: resp.data,
-                            siteSpecific: (arg2 !== undefined && arg2 !== ''),
-                            siteName: arg2
-                        });
-                    }
-
-                    component.enableTab('dqa');
-                }
-            }).catch(function() {});
-        }
-
-        return;
-    }    
-
-    // Table-level information
-    
-    if (arg2 === undefined) {
-        arg2='';
     }
 
-    title = <Title
-        model={model}
-        version={version}
-        table={arg1}
-        site={arg3}/>;
-
-    tabList = ['fields', 'etl', 'dqa'];
-    key = model + '_' + version + '_' + arg1 + '_' + arg2;
-
-    if (['fields', 'etl', 'dqa', ''].indexOf(arg2) >= 0) {
-        if (arg2 === '') {
-            component = React.render(
-                <Desc 
-                    key={key}
-                    baseUrl = {router.reverse(model, version, arg1)}
-                    activeTab = {arg2}
-                    tabList = {tabList}
-                    title = {title}/>,
-                mainRegion
-            );
-        }
-        else if (arg2 === 'fields') {
-            component = React.render(
-                <List 
-                    key={key}
-                    model={model}
-                    version={version}
-                    table={arg1}
-                    baseUrl = {router.reverse(model, version, arg1)}
-                    activeTab = {arg2}
-                    tabList = {tabList}
-                    title = {title}/>,
-                mainRegion
-            );
-        }
-        else if (arg2 === 'etl') {
-            title = <Title
-                model={model}
-                version={version}
-                table={arg1}
-                site={arg3}
-                activeTab='etl'/>;
-
-            component = React.render(
-                <MarkedText
-                    key={key}
-                    baseUrl = {router.reverse(model, version, arg1)}
-                    activeTab = {arg2}
-                    tabList = {tabList}
-                    title = {title}/>,
-                mainRegion
-            );
-        }
-        else if (arg2 === 'dqa') {
-            title = <Title
-                model={model}
-                version={version}
-                table={arg1}
-                site={arg3}
-                activeTab='dqa'/>;
-
-            component = React.render(
-                <DQA
-                    key={key}
-                    baseUrl = {router.reverse(model, version, arg1)}
-                    activeTab = {arg2}
-                    tabList = {tabList}
-                    title = {title}/>,
-                mainRegion
-            );
-        }
-
-        var urlDataModel = resources.getDataModelURL(model, version, arg1);
-        client.fetch({url: urlDataModel, cache: true}).then(function(resp) {
-            if (resp.data && resp.data.fields && !_.isEmpty(resp.data.fields)) {
-                if (arg2 === '') {
-                    page.redirect(router.reverse(model, version, arg1, 'fields'));
-                    return;
-                }
-
-                if (arg2 === 'fields') {
-                    component.setProps({
-                        items: resp.data.fields,
-                        description: resp.data.description
-                    });
-                }
-                else if (!(arg2 === 'dqa' && arg3)) {
-                    component.setProps({
-                        description: resp.data.description
-                    });                
-                }
-
-                component.enableTab('fields');
-            }
-        }).catch(function() {});
-
-        if (!dontFetchETLDQA[model]) {
-            var urlETL = resources.getETL_URL(model, version);
-            client.fetch({url: urlETL, cache: true}).then(function(resp) {
-                if (resp.data && resp.data.model && resp.data.model.tables && resp.data.model.tables[arg1]) {
-                    var content = resp.data.model.tables[arg1].content;
-
-                    if (content) {
-                        if (arg2 === 'etl') {
-                            component.setProps({
-                                content: content
-                            });
-                        }
-
-                        component.enableTab('etl');
-                    }
-                }
-            }).catch(function() {});
-
-            var urlDQA = resources.getDQA_URL(model, version, arg1);
-
-            // site-specific DQA requested
-            if (arg2 === 'dqa' && arg3) {
-                urlDQA += '/' + arg3;
-
-                component.setProps({
-                    tabList: ['dqa']
-                });
-            }
-
-            client.fetch({url: urlDQA, cache: true}).then(function(resp) {
-                if (resp.data && !_.isEmpty(resp.data)) {
-                    if (arg2 === 'dqa') {
-                        component.setProps({
-                            aggregated: true,
-                            siteSpecific: (arg3 !== undefined && arg3 !== ''),
-                            siteName: arg3,
-                            data: resp.data
-                        });
-                    }
-                    
-                    component.enableTab('dqa');
-                }
-            }).catch(function() {});
-
-            client.fetch({url: urlDqaDict, cache: true}).then(function(resp) {
-                if (resp.data && !_.isEmpty(resp.data)) {
-                    if (arg2 === 'dqa') {
-                        component.setProps({
-                            dict: resp.data
-                        });
-                    }    
-                }
-            }).catch(function() {});
-        }
-
-        return;
-    }
-
-    // Field-level information
-    
-    if (arg3 === undefined) {
-        arg3='';
-    }
-
-    title = <Title
-        model={model}
-        version={version}
-        table={arg1}
-        field={arg2}/>;
-
-    tabList = ['etl', 'dqa', 'site_comments'];
-    key = model + '_' + version + '_' + arg1 + '_' + arg2 + '_' + arg3;
-
-    if (['etl', 'dqa', 'site_comments', ''].indexOf(arg3) >= 0) {
-        if (arg3 === '') {
-            component = React.render(
-                <Desc
-                    key={key}
-                    baseUrl = {router.reverse(model, version, arg1, arg2)}
-                    activeTab = {arg3}
-                    tabList = {tabList}
-                    title = {title}/>,
-                mainRegion
-            );
-        }
-        else if (arg3 === 'etl') {
-            title = <Title
-                model={model}
-                version={version}
-                table={arg1}
-                field={arg2}
-                activeTab='etl'/>;
-
-            component = React.render(
-                <MarkedText
-                    key={key}
-                    baseUrl = {router.reverse(model, version, arg1, arg2)}
-                    activeTab = {arg3}
-                    tabList = {tabList}
-                    title = {title}/>,
-                mainRegion
-            );
-        }
-        
-        if (arg3 === 'dqa') {
-            title = <Title
-                model={model}
-                version={version}
-                table={arg1}
-                field={arg2}
-                activeTab='dqa'/>;
-
-            component = React.render(
-                <DQA
-                    key={key}
-                    baseUrl = {router.reverse(model, version, arg1, arg2)}
-                    activeTab = {arg3}
-                    tabList = {tabList}
-                    title = {title}/>,
-               mainRegion
-            );
-        }
-    
-        if (arg3 === 'site_comments') {
-            component = React.render(
-                <MarkedText
-                    key={key}
-                    baseUrl = {router.reverse(model, version, arg1, arg2)}
-                    activeTab = {arg3}
-                    tabList = {tabList}
-                    title = {title}/>,
-                mainRegion
-            );
-        }
-
-        // get field description
-        var urlDataModel = resources.getDataModelURL(model, version, arg1, arg2);
-        client.fetch({url: urlDataModel, cache: true}).then(function(resp) {
-            if (resp.data && resp.data.description) {
-                component.setProps({
-                    description: resp.data.description
-                });                
-            }
-        }).catch(function() {});
-
-        if (!dontFetchETLDQA[model]) {
-            var urlETL = resources.getETL_URL(model, version);
-            client.fetch({url: urlETL, cache: true}).then(function(resp) {
-                if (resp.data && resp.data.model && resp.data.model.tables && resp.data.model.tables[arg1]
-                              && resp.data.model.tables[arg1].fields) {
-                    var content = resp.data.model.tables[arg1].fields[arg2].etl_conventions;
-                    if (content) {
-                        if (arg3 === '') {
-                            page.redirect(router.reverse(model, version, arg1, arg2, 'etl'));
-                            return;
-                        }
-
-                        if (arg3 === 'etl') {
-                            component.setProps({
-                                content: content
-                            });
-                        }
-
-                        component.enableTab('etl');
-                    }
-                }
-            }).catch(function() {});
-
-            var urlDQA = resources.getDQA_URL(model, version, arg1, arg2);
-            client.fetch({url: urlDQA, cache: true}).then(function(resp) {
-                if (resp.data && !_.isEmpty(resp.data)) {
-                    if (arg3 === 'dqa') {
-                        component.setProps({
-                            aggregated: false,
-                            data: resp.data
-                        });
-                    }
-                
-                    component.enableTab('dqa');
-                }
-            }).catch(function() {});
-
-            client.fetch({url: urlDqaDict, cache: true}).then(function(resp) {
-                if (resp.data && arg3 === 'dqa') {
-                    component.setProps({
-                        dict: resp.data
-                    });
-                }
-            }).catch(function() {});
-        }
-        
-        // site comments originate from the annotated data dictioanry and 
-        // are only available on the field level
-
-        var urlDataDict = resources.getDataDictURL(model, version);
-        var siteComments = {};
+    // site comments are only available on the field level
+    if (field) {
+        urlDataDict = resources.urls.dataDict + model + '/' + version;
         client.fetch({url: urlDataDict, cache: true}).then(function(resp) {
-            if (resp.data && resp.data.model && resp.data.model[arg1]
-                          && resp.data.model[arg1][arg2]) {
-                if (arg3 === 'site_comments') {
-                    component.setProps({
-                        subtitle: 'Status: ' + resp.data.model[arg1][arg2].implementation_status,
-                        content: resp.data.model[arg1][arg2].site_comments
-                    });
+            component.setProps({
+                siteComments: { 
+                    status: resp.data.model[table][field].implementation_status,
+                    comment: resp.data.model[table][field].site_comments
                 }
-            
-                component.enableTab('site_comments');
-            }            
+            });
         }).catch(function() {});
     }
+
+    // DQA reports are available on the field level; in addition, 
+    // the DQA service provides aggregate information on the table 
+    // and site level.
+    var urlDqa;
+    if (table) { 
+        urlDqa = resources.urls.dqa + model + '/' + version;
+        if (field) {
+            urlDqa += '/field-totals'
+        }
+        else {
+            urlDqa += '/table-totals'
+        }
+    }
+    else {
+        urlDqa = resources.urls.dqa + model + '/' + version + '/site-totals'
+    }
+
+    client.fetch({url: urlDqa, cache: true}).then(function(resp) {
+        component.setProps({
+            dqa: resp.data
+        });
+    }).catch(function() {});
+
+    urlDqaDict = resources.urls.dqa + 'dictionary';
+    client.fetch({url: urlDqaDict, cache: true}).then(function(resp) {
+        component.setProps({
+            dqaDict: resp.data
+        });
+    }).catch(function() {});
 });
 
 // Catch-all for 404.
