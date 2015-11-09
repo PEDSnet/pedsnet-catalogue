@@ -1,6 +1,9 @@
 var React = require('react'),
     _ = require('underscore');
 
+var OverlayTrigger = require('react-bootstrap').OverlayTrigger,
+    Tooltip = require('react-bootstrap').Tooltip;
+
 var FixedDataTable = require('fixed-data-table'),
     Column = FixedDataTable.Column,
     Page = require('./pages/page'),
@@ -22,7 +25,6 @@ var DQAScores = React.createClass({
         title: React.PropTypes.object,
         columnWidth: React.PropTypes.number,
         data: React.PropTypes.object,
-        title: React.PropTypes.object,
         description: React.PropTypes.string,
         siteSpecific: React.PropTypes.bool,
         siteName: React.PropTypes.string,
@@ -307,10 +309,16 @@ var DQAScores = React.createClass({
         // not on hover over. 
         var info;
         if (cellDataKey !== 'name') {
-            info =
-                <a data-toggle='tooltip' title={tooltip_text} trigger='click'>
-                    <i className='fa fa-info-circle' style={{'marginLeft': '5px'}}></i>
-                </a>;
+
+            var tooltip = (
+              <Tooltip id='issue_type_descr'>{tooltip_text}</Tooltip>
+            );
+
+            info = (
+                <OverlayTrigger placement='top' overlay={tooltip}>
+                    <i className='fa fa-info-circle'></i>
+                </OverlayTrigger>
+            );
         } 
 
         var badge;
