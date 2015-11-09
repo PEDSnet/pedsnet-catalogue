@@ -3,39 +3,37 @@ var React = require('react'),
 
 
 var CollapsibleText = require('./collapsible-text'),
-    DQA = require('./dqa'),
-    DQAScoreCard = require('./dqa-scores'),
+    Dqa = require('./dqa'),
     resources = require('./resources'),
-    router = require('./router'),
     Table = require('./table');
 
 
 var DataModel = React.createClass({
     propTypes: {
+        name: React.PropTypes.string.isRequired,
+        version: React.PropTypes.string,
+        tables: React.PropTypes.array.isRequired,
+        label: React.PropTypes.string.isRequired,
+        description: React.PropTypes.string,
         activeTable: React.PropTypes.string,
         activeField: React.PropTypes.string,
-        description: React.PropTypes.string,
-        dqa: React.PropTypes.object,
-        dqaDict: React.PropTypes.object,
-        etlConventions: React.PropTypes.string,
-        label: React.PropTypes.string.isRequired,
-        name: React.PropTypes.string.isRequired,
-        siteComments: React.PropTypes.object,
-        tables: React.PropTypes.array.isRequired,
         url: React.PropTypes.string,
-        version: React.PropTypes.string
+        etlConventions: React.PropTypes.string,
+        siteComments: React.PropTypes.object,
+        dqa: React.PropTypes.object,
     },
 
     getDefaultProps: function() {
         return {
             description: '',
-            url: '#'
+            url: '#',
         };
     },
 
     getInitialState: function() {
         return {
-            collapsedStatus: {}
+            collapsedStatus: {},
+            tableWidth: 600,
         };
     },
     
@@ -81,82 +79,37 @@ var DataModel = React.createClass({
         var descriptionElement;
         var dqaElement;
         var etlConventionsElement;
-        var titleElement;
-
-        if (this.props.activeTable) {
-            var url = router.reverse(this.props.name, version, this.props.activeTable);
-            var title = <a href={url}>{this.props.activeTable}</a>
-
-            if (this.props.activeField) {
-                title = <p><span>{title}</span>{'/ ' + this.props.activeField} </p>
-            }
-            else {
-                title = <p><span>{title}</span></p>
-            }
-            titleElement = (
-                <li key='title' style={{'marginBottom': 20}}>
-                    <h4>
-                        {title}
-                    </h4>
-                </li>
-            );
-        }
 
         if (this.props.siteComments) {
-            dataDictElement = (
+            dataDictElement =
                 <li key='data-dict'>
                     <CollapsibleText title={'Site Comments [Implementation Status: ' + this.props.siteComments.status + ']'} 
                                       content={this.props.siteComments.comment}/>
                 </li>
-            );
         }
 
         if (description !== '') {
-            descriptionElement = (
+            descriptionElement =
                 <li key='description'>
                     <CollapsibleText title='Description' content={description}/>
-                </li>
-            );
+                </li>;
         }
 
         if (this.props.etlConventions) {
-            etlConventionsElement = (
+            etlConventionsElement =
                 <li key='etl'>
                     <CollapsibleText title='ETL Conventions' content={this.props.etlConventions}/>
                 </li>
-            );
         }
 
         var dqaTable = this.props.dqa && this.props.dqa[this.props.activeTable];
-        var dqaField = dqaTable && dqaTable[this.props.activeField];
+        var dqaField = dqaTable && dqaTable.fields[this.props.activeField];
 
-        if (dqaTable) {
-            if (dqaField) {
-                dqaElement = (
-                    <li key='dqa'>
-                        <DQA data={dqaField} dict={this.props.dqaDict}/>
-                    </li>
-                );
-            }
-            else {
-                // dqaField can be undefined because no DQA info is available for that field,
-                // or because we are displaying table-level info. Address the latter.
-                if (!this.props.activeField) {
-                    dqaElement = (
-                        <li key='dqa'>
-                            <DQA data={dqaTable} aggregated={true} dict={this.props.dqaDict}/>
-                        </li>
-                    );
-                }        
-            }
-        }
-        else if (this.props.dqa && !this.props.activeTable) {
-            // cumulative score card for all sites across all tables in the model
-            dqaElement = (
+        if (dqaTable !== undefined && dqaField !== undefined) {
                 <li key='dqa'>
-                    <DQAScoreCard data={this.props.dqa}/>
+                    <Dqa width={this.state.tableWidth} 
+                         data={this.props.dqa[dqaTable][dqaField]}/>
                 </li>
-            );
         }
 
         var model = this.props.name;
@@ -170,9 +123,7 @@ var DataModel = React.createClass({
                     <a className='external-link' href={this.props.url}>{this.props.label}</a>
                 </h3>
 
-                <div className='col-md-12' style={{'paddingBottom' : '10px'}}>
-                    <a className='external-link' href={urlDDL}>DDL and ERD information</a> 
-                </div> 
+                <a className='col-md-12 external-link' style={{'paddingBottom' : '10px'}} href={urlDDL}>DDL and ERD information</a> 
 
                 <div className='container-fluid fixed-height'>
                     <div className='row fixed-height'>
@@ -181,7 +132,6 @@ var DataModel = React.createClass({
                         </div>
                         <div className='col-md-8 scrollable' style={{'height': 'calc(100% - 70px)'}}>
                             <ul className='nav nav-pills nav-stacked'>
-                                {titleElement}
                                 {descriptionElement}
                                 {etlConventionsElement}
                                 {dataDictElement}
@@ -194,6 +144,17 @@ var DataModel = React.createClass({
         );
     },
 
+    componentDidMount: function() {
+        // there has to be a better way to size the table correctly, but this will do for now.
+        // (TODO figure out a cleaner way to do this)
+        var component = document.getElementById('dqaContainer');
+        if (component) {
+            this.setState({
+                tableWidth : component.clientWidth
+            });
+        }
+    },
+
     isTableCollapsed: function(tableName) {
         var collapsedStatus = this.state.collapsedStatus;
         // by default, if table is not listed in collapsedStatus, it's collapsed
@@ -203,11 +164,9 @@ var DataModel = React.createClass({
     toggleCollapsed: function(tableName) {
         return function () {
             this.state.collapsedStatus[tableName] = !this.isTableCollapsed(tableName);
-            // force re-rendering; otherwise the collapsed/expanded table doesn't 
-            // redraw till the next change
-            this.forceUpdate();
+            this.forceUpdate(); // otherwise the collapsed/expanded table doesn't redraw till the next change
         }.bind(this);
-    }
+    },
 });
 
 
