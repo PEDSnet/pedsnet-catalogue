@@ -23,7 +23,6 @@ var Element = React.createClass({
     propTypes: {
         title: React.PropTypes.object,
         content: React.PropTypes.string,
-        title: React.PropTypes.object,
         subtitle: React.PropTypes.string,
         description: React.PropTypes.string,
         baseUrl: React.PropTypes.string,
