@@ -75,7 +75,6 @@ var config = {
             entry: {
                 vendors: [
                     'react',
-                    'react-bootstrap',
                     'page',
                     'underscore'
                 ],
@@ -93,23 +92,11 @@ var config = {
             module: {
                 noParse: [
                     nodeDir + '/react/dist/react.js',
-                    nodeDir + '/react-bootstrap/dist/react-bootstrap.js',
                     nodeDir + '/page/page.js',
                     nodeDir + '/underscore/underscore.js'
                 ],
 
-                loaders: [
-                {
-                    test: /\.js$/,
-                    include: nodeDir + '/react-bootstrap/',
-                    loader: 'jsx-loader',
-                },
-                {
-                    test: /\.js$/,
-                    exclude: /node_modules/,
-                    loader: 'jsx-loader',
-                },
-                {
+                loaders: [{
                     test: /\.jsx$/,
                     loader: 'jsx-loader'
                 }]
@@ -264,7 +251,6 @@ var config = {
             ignores: [
                 '<%= buildDir %>/js/underscore.js',
                 '<%= buildDir %>/js/react.js',
-                '<%= buildDir %>/js/react-bootstrap.js',
                 '<%= buildDir %>/js/flux.js'
             ]
         },
@@ -287,7 +273,6 @@ var addWebpackVendor = function(aliases) {
 
 addWebpackVendor({
     'react': nodeDir + '/react/dist/react.js',
-    'react-bootstrap': nodeDir + '/react-bootstrap/dist/react-bootstrap.js',
     'page': nodeDir + '/page/page.js',
     'underscore': nodeDir + '/underscore/underscore.js'
 });

@@ -1,9 +1,6 @@
 var React = require('react'),
     _ = require('underscore');
 
-var DropdownButton = require('react-bootstrap').DropdownButton,
-    MenuItem = require('react-bootstrap').MenuItem;
-
 var resources = require('./resources'),
     router = require('./router');
 
@@ -23,7 +20,6 @@ var Title = React.createClass({
         var table = this.props.table;
         var field = this.props.field;
         var site = this.props.site;
-        var sites = this.props.sites;
 
         var suffix = '';
         if (this.props.activeTab) {
@@ -76,51 +72,18 @@ var Title = React.createClass({
         }
         else {
             // site-specific DQA info
+
             var tableElement;
-            var remove;
             if (table) {
-                tableElement = (
+                tableElement =
                     <div style={{'marginLeft': '15px', 'marginTop': '5px'}}>
                         {stepIn}
                         <i className='fa fa-table' style={{'marginRight': '15px'}}></i>
                         <a href={router.reverse(model, version, table) + 'dqa/' + site + '/'}>
                             {table}
                         </a>
-                    </div>
-                );
-
-                remove = (
-                    <a href={router.reverse(model, version, table) + 'dqa/'}>
-                        <i className='fa fa-remove' style={{'marginLeft': '10px'}}></i>
-                    </a>
-                );                            
+                    </div>;
             }
-
-            var siteElement;
-            if (sites) {
-                var menuItems = _.map(sites, function(s) {
-                    var dropdownURL;
-                    if (table) {
-                        dropdownURL = router.reverse(model, version, table) + 'dqa/' + s + '/';
-                    }
-                    else {
-                        dropdownURL = router.reverse(model, version) + 'dqa/' + s + '/';
-                    }
-                    return (<MenuItem key={s+'_dropdown'} href={dropdownURL}>{s}</MenuItem>);
-                });
-
-                siteElement = 
-                    <DropdownButton title={site} id='dropdown' className='dropdown'>
-                        {menuItems}
-                    </DropdownButton>
-            }
-            else {
-                siteElement = 
-                    <a href={router.reverse(model, version) + 'dqa/' + site + '/'}>
-                        {site}
-                    </a>
-            }
-
             return (
                 <h4 className='title'>
                     <div>
@@ -135,8 +98,9 @@ var Title = React.createClass({
                         {stepIn}
                         <i className='fa fa-h-square' style={{'marginRight': '15px'}}></i>
                         <span>
-                            {siteElement}
-                            {remove}                            
+                            <a href={router.reverse(model, version) + 'dqa/' + site + '/'}>
+                                {site}
+                            </a>
                         </span>
                     </div>
                     {tableElement}
