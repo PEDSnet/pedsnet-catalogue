@@ -3,16 +3,19 @@ var React = require('react'),
 
 
 var Page = require('./pages/page'),
-    Tabs = require('./tabs');
+    Tabs = require('./tabs'),
+    TitleHelper = require('./title-helper');
 
 
 var Desc = React.createClass({
     propTypes: {
-        title: React.PropTypes.object,
-        description: React.PropTypes.string,
-        baseUrl: React.PropTypes.string,
         activeTab: React.PropTypes.string,
-        tabList: React.PropTypes.array
+        baseUrl: React.PropTypes.string,
+        description: React.PropTypes.string,
+        tabList: React.PropTypes.array,
+        title: React.PropTypes.object,
+        titleFields: React.PropTypes.array,
+        titleTables: React.PropTypes.array
     },
     
     getInitialState: function() {
@@ -29,6 +32,8 @@ var Desc = React.createClass({
     },
     
     render: function() {
+        TitleHelper.renderTitle(this);
+
         var enabledTabs = Object.keys(this.state.enabledTabs);
         var tabs = <Tabs 
             key = {enabledTabs.join('_')}
@@ -40,7 +45,7 @@ var Desc = React.createClass({
         return (
             <Page>
                 <div className='margined'>
-                    {this.props.title}
+                    {TitleHelper.renderTitle(this)}
                     <p>{this.props.description}</p>
                 </div>
                 {tabs}

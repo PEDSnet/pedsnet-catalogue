@@ -3,12 +3,12 @@ var React = require('react'),
 
 var FixedDataTable = require('fixed-data-table'),
     Column = FixedDataTable.Column,
+    Helper = require('./table-helper'),
     Page = require('./pages/page'),
     Table = FixedDataTable.Table,
     Tabs = require('./tabs'),
-    Title = require('./title');
-
-var Helper = require('./table-helper');
+    Title = require('./title'),
+    TitleHelper = require('./title-helper');
 
 var isColumnResizing;
 var width = 80;
@@ -20,16 +20,19 @@ var SortTypes = {
        
 var DQA = React.createClass({
     propTypes: {
-        title: React.PropTypes.object,
+        activeTab: React.PropTypes.string,
         aggregated: React.PropTypes.bool,
+        baseUrl: React.PropTypes.string,
         data: React.PropTypes.object,
-        dict: React.PropTypes.object,
         description: React.PropTypes.string,
+        dict: React.PropTypes.object,
         siteSpecific: React.PropTypes.bool,
         siteName: React.PropTypes.string,
-        baseUrl: React.PropTypes.string,
-        activeTab: React.PropTypes.string,
-        tabList: React.PropTypes.array
+        tabList: React.PropTypes.array,
+        title: React.PropTypes.object,
+        titleFields: React.PropTypes.array,
+        titleTables: React.PropTypes.array,
+        titleSites: React.PropTypes.array
     },
 
     getDefaultProps: function() {
@@ -49,7 +52,7 @@ var DQA = React.createClass({
                 status: 2*width,
                 names: 5*width
             },
-            rows: {},
+            rows: [],
             sortBy: 'code',
             sortDir: SortTypes.ASC,
             tableWidth: 500,
@@ -64,11 +67,60 @@ var DQA = React.createClass({
         });
     },
 
-    _renderSiteTableLink: function(cellData) {
+    _getPixelLength: function(str) {
+        // find the dummy invisible element we added for measuring things
+        var ruler = document.getElementById('ruler');
+
+        if (!ruler) {
+            return str.length * 10;
+        }
+
+        ruler.innerHTML = str;
+        return ruler.offsetWidth;
+    },
+
+    _trimToLength: function(str, maxLengthInPixels) {
+        /*  Note: Always keep at least one word because column renderers of
+            fixed-data-table will always display at least part of the first word
+            (all words after the first are either displayed in full length or 
+            completely chopped off).
+        */
+        if (str.indexOf(' ') < 0) {
+            return str;
+        }
+
+        var data = str.trim().split(' ');
+        var res = data[0];
+
+        for (var i=1; i<data.length; i++) {
+            if (this._getPixelLength(res + ' ' + data[i]) > maxLengthInPixels-20) {
+                res += ' ...';
+                break;
+            }
+
+            res += ' ' + data[i];
+        }
+
+        return res;
+    },
+
+    _renderCell: function(
+                        cellData, cellDataKey,
+                        rowData, rowIndex,
+                        columnData, width) {
+        return this._trimToLength(cellData, width);
+    },
+
+    _renderSiteTableLink: function(
+                        cellData, cellDataKey,
+                        rowData, rowIndex,
+                        columnData, width) {
         // Link to the DQA report for the given site.
         // If we are linking from table level, link to the site's report for the same table.
         // Otherwise link to top-level DQA for the site. 
         
+        cellData = this._trimToLength(cellData, width);
+
         var baseUrl = location.href;
         // there may or may not be a '#' or a '/' at the end,
         // so it's easier to just chop off and re-construct the 'dqa' suffix
@@ -85,6 +137,10 @@ var DQA = React.createClass({
 
         var sites = cellData.split(' ');
         var links = sites.map(function(record) {
+            if (record === '...') {
+                return (<span key='ellipses'>...</span>);
+            }
+
             var siteName;
 
             if (this.props.aggregated) {
@@ -108,9 +164,10 @@ var DQA = React.createClass({
     _getRows: function(props, sortBy) {
         var code;
         var desc;
+        var entries;
+        var goal;
         var rows = [];
         var status;
-        var entries;
 
         if (!sortBy) {
             sortBy = this.state.sortBy;
@@ -118,18 +175,17 @@ var DQA = React.createClass({
 
         for (code in props.data) {
             desc = props.dict[code]? props.dict[code].desc : '';
+            goal = props.dict[code]? props.dict[code].goal : 'unknown';
 
             for (status in props.data[code]) {
                 if (props.siteSpecific) {
-                    entries = [];
-
-                    props.data[code][status].forEach(function(entry) {
-                        entries.push(entry.field);
+                    entries = props.data[code][status].map(function(obj) {
+                        return obj.field;
                     });
                 }
                 else if (props.aggregated) {
                     entries = [];
-                    for (site in props.data[code][status]) {
+                    for (var site in props.data[code][status]) {
                         entries.push(site + '(' + props.data[code][status][site].length + ')');
                     }
                 }
@@ -166,24 +222,30 @@ var DQA = React.createClass({
                 }
             }
         }
+
         return rows;
     },
 
     componentWillReceiveProps: function(nextProps) {
-        var mergedProps = this.props;
+        var mergedProps = {};
+
+        for (var prop in this.props) {
+            mergedProps[prop] = this.props[prop];
+        }
+
         for (var prop in nextProps) {
             mergedProps[prop] = nextProps[prop];
         }
 
         this.setState({
             rows: this._getRows(mergedProps)
-        })
+        });
     },
 
     componentWillMount: function() {
         this.setState({
-            rows: this._getRows(this.props),
-        })
+            rows: this._getRows(this.props)
+        });
     },
 
     componentDidMount: function() {
@@ -208,7 +270,7 @@ var DQA = React.createClass({
           sortDir = SortTypes.ASC;
         }
         
-        var rows = this._getRows(this.props, sortBy).slice();
+        var rows = this._getRows(this.props, sortBy);
 
         if(sortBy === 'status') {
             var statusList = Helper.statusList;
@@ -285,20 +347,14 @@ var DQA = React.createClass({
     },
 
 
-
     render: function() {
         var rowHeight = 30;
         var headerHeight = 50;
         var numRows = this.state.rows.length;
         
-        var sortDirArrow = '';
-    
-        if (this.state.sortDir !== null){
-          sortDirArrow = this.state.sortDir === SortTypes.ASC ? (' ' + String.fromCharCode(9660)) : 
-                                                                (' ' + String.fromCharCode(9650));
-        }
-
         var contents;
+
+        TitleHelper.renderTitle(this);
 
         // For site-specific reports the 'names' column holds
         // the list of field names for which an issue with a given code was reported.
@@ -310,6 +366,7 @@ var DQA = React.createClass({
 
         if (this.props.siteSpecific) {
             nameColumnLabel = 'Fields';
+            nameColumnRenderer = this._renderCell;
         }
         else {
             nameColumnLabel = 'Sites';
@@ -324,7 +381,7 @@ var DQA = React.createClass({
         // make sure there's a change to the column label when sort direction changes.
         // This is a hack, but I don't know how else to trigger header re-drawing 
         // besides changing the label. 
-   
+
         if (!_.isEmpty(this.state.rows)) {
             contents =
                 <Table
@@ -346,6 +403,7 @@ var DQA = React.createClass({
                         fixed={true}
                         headerRenderer={this._renderHeader}
                         label={'Code' + '#' + (this.state.sortBy === 'code' ? this.state.sortDir : '')}
+                        cellRenderer={this._renderCell}
                     />
                     <Column
                         width={this.state.columnWidths['desc']}
@@ -353,6 +411,7 @@ var DQA = React.createClass({
                         dataKey={'desc'}
                         headerRenderer={this._renderHeader}
                         label={'Description' + '#' + (this.state.sortBy === 'desc' ? this.state.sortDir : '')}
+                        cellRenderer={this._renderCell}
                     />
                     <Column
                         width={this.state.columnWidths['status']}
@@ -360,6 +419,7 @@ var DQA = React.createClass({
                         dataKey={'status'}
                         headerRenderer={this._renderHeader}
                         label={'Status' + '#' + (this.state.sortBy === 'status' ? this.state.sortDir : '')}
+                        cellRenderer={this._renderCell}
                     />
                     <Column
                         width={this.state.columnWidths['names']}
@@ -384,12 +444,13 @@ var DQA = React.createClass({
         return (
             <Page>
                 <div className='margined'>
-                    {this.props.title}
+                    {TitleHelper.renderTitle(this)}
                     <p>{this.props.description}</p>
                 </div>
                 {tabs}
                 <div id='tableContainer' className='panel-group dqa margined'>
                     {contents}
+                    <span id='ruler' style={{'visibility': 'hidden', 'whiteSpace': 'nowrap'}}></span>
                 </div>
             </Page>
         );

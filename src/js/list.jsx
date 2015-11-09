@@ -6,20 +6,24 @@ var Page = require('./pages/page'),
     resources = require('./resources'),
     router = require('./router'),
     Tabs = require('./tabs'),
-    Title = require('./title');
+    Title = require('./title'),
+    TitleHelper = require('./title-helper');
 
 
 var List = React.createClass({
     propTypes: {
-        title: React.PropTypes.object,
-        model: React.PropTypes.string.isRequired,
-        version: React.PropTypes.string.isRequired,
-        table: React.PropTypes.string,
+        activeTab: React.PropTypes.string,
+        baseUrl: React.PropTypes.string,
         description: React.PropTypes.string,
         items: React.PropTypes.array,
-        baseUrl: React.PropTypes.string,
-        activeTab: React.PropTypes.string,
-        tabList: React.PropTypes.array
+        model: React.PropTypes.string.isRequired,
+        table: React.PropTypes.string,
+        tabList: React.PropTypes.array,
+        title: React.PropTypes.object,
+        titleFields: React.PropTypes.array,
+        titleTables: React.PropTypes.array,
+        titleSites: React.PropTypes.array,
+        version: React.PropTypes.string.isRequired
     },
 
     getDefaultProps: function() {
@@ -77,7 +81,7 @@ var List = React.createClass({
         return (
             <Page>
                 <div className='margined'>
-                    {this.props.title}
+                    {TitleHelper.renderTitle(this)}
                     <p>{this.props.description}</p>
                 </div>
                 {tabs}

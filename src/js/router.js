@@ -14,7 +14,9 @@ var reverse = function() {
     var addr = '/models/';
 
     for (var i=0; i<arguments.length; i++) {
-        addr += (arguments[i] + '/');
+        if (arguments[i]) {
+            addr += (arguments[i] + '/');
+        }
     }
 
     return addr;

@@ -78,17 +78,25 @@ module.exports = {
 
     getDQA_URL: function(model, version, table, field) {
         if (!table) {
-            return this.urls.dqa + model + '/' + version + '/site-totals';
+            return this.urls.dqa + model + '/' + version + '/site-totals/';
         }
 
         if (!field) {
-            return this.urls.dqa + model + '/' + version + '/table-totals/' + table;
+            return this.urls.dqa + model + '/' + version + '/table-totals/' + table + '/';
         }
 
-        return this.urls.dqa + model + '/' + version + '/field-totals/' + table + '/' + field;
+        return this.urls.dqa + model + '/' + version + '/field-totals/' + table + '/' + field + '/';
+    },
+
+    getDQASiteListURL: function(model, version, table) {
+        if (!table) {
+            return this.urls.dqa + model + '/' + version + '/site-list/';
+        }
+
+        return this.urls.dqa + model + '/' + version + '/site-list/' + table + '/';
     },
 
     getDQADictURL: function() {
-        return this.urls.dqa + 'dictionary';
+        return this.urls.dqa + 'dictionary/';
     }
 };

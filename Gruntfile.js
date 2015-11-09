@@ -1,7 +1,7 @@
 /* global module, require, console, pkg, __dirname */
 
 var webpack = require('webpack'),
-	shell = require('shelljs');
+    shell = require('shelljs');
 
 
 var srcDir = __dirname + '/src',
@@ -75,6 +75,7 @@ var config = {
             entry: {
                 vendors: [
                     'react',
+                    'react-bootstrap',
                     'page',
                     'underscore'
                 ],
@@ -91,12 +92,24 @@ var config = {
 
             module: {
                 noParse: [
-                    nodeDir + '/react/dist/react.js',
+                    nodeDir + '/react/dist/react-with-addons.js',
+                    nodeDir + '/react-bootstrap/dist/react-bootstrap.js',
                     nodeDir + '/page/page.js',
                     nodeDir + '/underscore/underscore.js'
                 ],
 
-                loaders: [{
+                loaders: [
+                {
+                    test: /\.js$/,
+                    include: nodeDir + '/react-bootstrap/',
+                    loader: 'jsx-loader',
+                },
+                {
+                    test: /\.js$/,
+                    exclude: /node_modules/,
+                    loader: 'jsx-loader',
+                },
+                {
                     test: /\.jsx$/,
                     loader: 'jsx-loader'
                 }]
@@ -250,7 +263,8 @@ var config = {
             reporter: require('jshint-stylish'),
             ignores: [
                 '<%= buildDir %>/js/underscore.js',
-                '<%= buildDir %>/js/react.js',
+                '<%= buildDir %>/js/react-with-addons.js',
+                '<%= buildDir %>/js/react-bootstrap.js',
                 '<%= buildDir %>/js/flux.js'
             ]
         },
@@ -272,7 +286,8 @@ var addWebpackVendor = function(aliases) {
 
 
 addWebpackVendor({
-    'react': nodeDir + '/react/dist/react.js',
+    'react': nodeDir + '/react/dist/react-with-addons.js',
+    'react-bootstrap': nodeDir + '/react-bootstrap/dist/react-bootstrap.js',
     'page': nodeDir + '/page/page.js',
     'underscore': nodeDir + '/underscore/underscore.js'
 });
@@ -306,7 +321,7 @@ module.exports = function(grunt) {
         shell.exec(cmd);
     };
 
-	config.pkg = grunt.file.readJSON('package.json');
+    config.pkg = grunt.file.readJSON('package.json');
 
     grunt.initConfig(config);
 
