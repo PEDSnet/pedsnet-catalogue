@@ -15,7 +15,7 @@ module.exports = {
         dataDict: 'http://reslnpedsndev01.research.chop.edu:6002/',
         ddl: 'http://dmsa.a0b.io/',
         dataModel: 'http://reslnpedsndev01.research.chop.edu:6003/models/',
-        dqa: 'http://127.0.0.1:4321/',
-        etl: 'http://reslnpedsndev01.research.chop.edu:6001/',
-    },
+        dqa: 'http://reslnpedsndev01.research.chop.edu:6005/',
+        etl: 'http://reslnpedsndev01.research.chop.edu:6001/'
+    }
 };

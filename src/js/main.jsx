@@ -15,11 +15,11 @@ var Data = require('./pages/data');
 
 
 page('/', function() {
-    page.redirect('/data/');
+    page.redirect('/model/');
 });
 
 
-page('/data/:model?/:version?/:table?/:field*', function(cxt) {
+page('/model/:model?/:version?/:table?/:field*', function(cxt) {
     var model = cxt.params.model;
     var table = cxt.params.table;
     var field = cxt.params.field;
@@ -27,7 +27,7 @@ page('/data/:model?/:version?/:table?/:field*', function(cxt) {
 
     if (!model) {
         if (resources.models.length > 0) {
-            page.redirect('/data/'+resources.models[0]+'/');
+            page.redirect('/model/'+resources.models[0]+'/');
         }
         return;
     }
@@ -56,8 +56,9 @@ page('/data/:model?/:version?/:table?/:field*', function(cxt) {
         // if version wasn't specified in the url, redirect to the highest version
         var versions = Object.keys(resp);
         if (!version && versions.length>0) {
-            page.redirect('/data/'+model+'/'+versions.sort().reverse()[0]);
-        } else {
+            page.redirect('/model/'+model+'/'+versions.sort().reverse()[0]);
+        }
+        else {
             component.setProps({
                 modelAllVersions: resp
             });
@@ -72,10 +73,12 @@ page('/data/:model?/:version?/:table?/:field*', function(cxt) {
             if (table) {
                 if (field) {
                     etlContent = resp.data.model.tables[table].fields[field].etl_conventions;
-                } else {
+                }
+                else {
                     etlContent = resp.data.model.tables[table].content;
                 }
-            } else {
+            }
+            else {
                 // model-level etl conventions
                 etlContent = resp.data.model.content;
             }
@@ -93,20 +96,41 @@ page('/data/:model?/:version?/:table?/:field*', function(cxt) {
             component.setProps({
                 siteComments: { 
                     status: resp.data.model[table][field].implementation_status,
-                    comment: resp.data.model[table][field].site_comments,  
+                    comment: resp.data.model[table][field].site_comments
                 }
             });
         }).catch(function() {});
     }
 
-    if (field) { 
-        urlDQA = resources.urls.dqa + model + '/' + version;
-        client.fetch({url: urlDQA, cache: true}).then(function(resp) {
-            component.setProps({
-                dqa: resp.data
-            });
-        }).catch(function() {});
+    // DQA reports are available on the field level; in addition, 
+    // the DQA service provides aggregate information on the table 
+    // and site level.
+    var urlDqa;
+    if (table) { 
+        urlDqa = resources.urls.dqa + model + '/' + version;
+        if (field) {
+            urlDqa += '/field-totals'
+        }
+        else {
+            urlDqa += '/table-totals'
+        }
     }
+    else {
+        urlDqa = resources.urls.dqa + model + '/' + version + '/site-totals'
+    }
+
+    client.fetch({url: urlDqa, cache: true}).then(function(resp) {
+        component.setProps({
+            dqa: resp.data
+        });
+    }).catch(function() {});
+
+    urlDqaDict = resources.urls.dqa + 'dictionary';
+    client.fetch({url: urlDqaDict, cache: true}).then(function(resp) {
+        component.setProps({
+            dqaDict: resp.data
+        });
+    }).catch(function() {});
 });
 
 // Catch-all for 404.
