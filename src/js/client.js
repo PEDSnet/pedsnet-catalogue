@@ -8,8 +8,7 @@ var cache = {};
 var send = function(method, options) {
     if (typeof method === 'object') {
         options = method;
-    }
-    else {
+    } else {
         options = options || {};
         options.method = method;
     }
@@ -18,8 +17,7 @@ var send = function(method, options) {
     // ready before being evaluated
     if (typeof options.url === 'function') {
         options.url = options.url();
-    }
-    else if (!options.url) {
+    } else if (!options.url) {
         throw new Error('url required');
     }
 

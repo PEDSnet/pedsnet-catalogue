@@ -54,7 +54,7 @@ var Collapsible = React.createClass({
         this.setState({
             isCollapsed : !this.state.isCollapsed
         });
-    }
+    },
 });
 
 

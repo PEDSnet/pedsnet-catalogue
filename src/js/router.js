@@ -5,7 +5,7 @@ var reverse = function() {
     var addr = '';
 
     if (arguments.length >0 && resources.models.indexOf(arguments[0]) >= 0) {
-        addr = '/model/';
+        addr = '/data/';
 
         for (var i=0; i<arguments.length; i++) {
             addr += (arguments[i] + '/');
