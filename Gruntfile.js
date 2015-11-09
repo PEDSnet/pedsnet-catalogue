@@ -15,7 +15,6 @@ var config = {
     specDir: 'spec',
     buildDir: 'build',
     distDir: 'dist',
-    cdnDir: 'cdn',
     nodeDir: 'node_modules',
 
     serve: {
@@ -175,6 +174,39 @@ var config = {
                 src: '**/*',
                 dest: '<%= buildDir %>'
             }]
+        },
+
+        dist: {
+            files: [{
+                expand: true,
+                flatten: true,
+                cwd: '<%= nodeDir %>',
+                src: [
+                    'font-awesome/css/font-awesome.css',
+                    'bootstrap/dist/css/bootstrap.css',
+                    'bootstrap/dist/css/bootstrap.css.map',
+                    'fixed-data-table/dist/fixed-data-table.css',
+                ],
+                dest: '<%= distDir %>/css'
+            }, {
+                expand: true,
+                flatten: true,
+                cwd: '<%= nodeDir %>',
+                src: [
+                    'font-awesome/fonts/*'
+                ],
+                dest: '<%= distDir %>/fonts'
+            }, {
+                expand: true,
+                cwd: '<%= srcDir %>/img',
+                src: '**/*',
+                dest: '<%= distDir %>/img'
+            }, {
+                expand: true,
+                cwd: '<%= srcDir %>/html',
+                src: '**/*',
+                dest: '<%= distDir %>'
+            }]
         }
     },
 
@@ -188,6 +220,7 @@ var config = {
                 '<%= buildDir %>/css/main.css': '<%= srcDir %>/scss/main.scss'
             }
         },
+
         dist: {
             options: {
                 quiet: true,
@@ -196,84 +229,9 @@ var config = {
             files: {
                 '<%= distDir %>/css/main.css': '<%= srcDir %>/scss/main.scss'
             }
-        },
-        cdn: {
-            options: {
-                quiet: true,
-                sourcemap: false,
-                style: 'compressed'
-            },
-            files: {
-                '<%= cdnDir %>/css/main.css': '<%= srcDir %>/scss/main.scss'
-            }
         }
     },
 
-    copy: {
-        build: {
-            files: [{
-                expand: true,
-                src: ['package.json'],
-                dest: '<%= buildDir %>'
-            }, {
-                expand: true,
-                cwd: '<%= srcDir %>/js',
-                src: ['**/*'],
-                dest: '<%= buildDir %>/js'
-            }, {
-                expand: true,
-                flatten: true,
-                cwd: '<%= nodeDir %>',
-                src: [
-                    'flux/dist/Flux.js',
-                    'react-bootstrap/dist/react-bootstrap.js',
-                    'react/dist/react.js',
-                    'underscore/underscore.js',
-                ],
-                dest: '<%= buildDir %>/js'
-            }]
-        },
-
-        dist: {
-            files: [{
-                expand: true,
-                cwd: '<%= srcDir %>/html',
-                src: ['**/*'],
-                dest: '<%= distDir %>'
-            }, {
-                expand: true,
-                src: ['package.json'],
-                dest: '<%= distDir %>'
-            }, {
-                expand: true,
-                flatten: true,
-                cwd: '<%= nodeDir %>',
-                src: [
-                    'font-awesome/css/font-awesome.css',
-                    'bootstrap/dist/css/bootstrap.css',
-                    'bootstrap/dist/css/bootstrap.css.map'
-                ],
-                dest: '<%= distDir %>/css'
-            }, {
-                expand: true,
-                flatten: true,
-                cwd: '<%= nodeDir %>',
-                src: [
-                    'font-awesome/fonts/*'
-                ],
-                dest: '<%= distDir %>/fonts'
-            }]
-        },
-
-        cdn: {
-            files: [{
-                expand: true,
-                cwd: '<%= srcDir %>/html',
-                src: ['**/*'],
-                dest: '<%= cdnDir %>'
-            }]
-        }
-    },
 
     clean: {
         build: [
@@ -370,7 +328,6 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-contrib-watch');
     grunt.loadNpmTasks('grunt-contrib-sass');
     grunt.loadNpmTasks('grunt-contrib-jshint');
-    grunt.loadNpmTasks('grunt-contrib-copy');
     grunt.loadNpmTasks('grunt-contrib-clean');
     grunt.loadNpmTasks('grunt-webpack');
     grunt.loadNpmTasks('grunt-sync');
@@ -469,33 +426,22 @@ module.exports = function(grunt) {
     });
 
     grunt.registerTask('build', 'Creates a build for local development', [
+        'clean:build',
         'sass:build',
         'webpack:build',
         'sync:build'
     ]);
 
     grunt.registerTask('dist', 'Creates a build for distribution', [
-        'clean:build',
-        'copy:build',
-        'webpack:build',
         'clean:dist',
         'sass:dist',
-        'copy:dist',
         'webpack:dist',
-    ]);
-
-    grunt.registerTask('cdn', 'Creates a build for CDN distribution', [
-        'clean:build',
-        'copy:build',
-        'clean:cdn',
-        'sass:cdn',
-        'copy:cdn',
-        'clean:postcdn'
+        'sync:dist'
     ]);
 
     grunt.registerTask('work', 'Local build and starts a watch process', [
         'build',
-        'sync',
+        'sync:build',
         'watch'
     ]);
 
@@ -583,7 +529,6 @@ module.exports = function(grunt) {
         'bump-final',
         'build',
         'dist',
-        'cdn',
         'clean:release',
         'release-binaries',
         'tag-release',
