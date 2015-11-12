@@ -80,20 +80,32 @@ var DQA = React.createClass({
     },
 
     _trimToLength: function(str, maxLengthInPixels) {
-        /*  Note: Always keep at least one word because column renderers of
-            fixed-data-table will always display at least part of the first word
-            (all words after the first are either displayed in full length or 
-            completely chopped off).
-        */
-        if (str.indexOf(' ') < 0) {
-            return str;
-        }
-
         var data = str.trim().split(' ');
-        var res = data[0];
+        var res = '';
+        var lenAddOneWord;
+        var lenAddTwoWords;
+        var lenAddOneWordAndEllipsis;
 
-        for (var i=1; i<data.length; i++) {
-            if (this._getPixelLength(res + ' ' + data[i]) > maxLengthInPixels-20) {
+        for (var i=0; i<data.length; i++) {
+            // length of the text after adding the i-th word
+            lenAddOneWord = this._getPixelLength(res + data[i]) ;
+
+            // Even if we can fit in the i-th word, we might still want to
+            // replace it with an ellipsis if after adding this word we won't
+            // have any space left to fit in either one more word or an ellipsis. 
+
+            if (i<data.length-1) {
+                lenAddTwoWords = this._getPixelLength(res + data[i] + ' ' + data[i+1]);
+                lenAddOneWordAndEllipsis = this._getPixelLength(res + data[i] + ' ...');
+            }
+            else {
+                lenAddTwoWords = 0;
+                lenAddOneWordAndEllipsis = 0;
+            }
+
+            if ((lenAddOneWord > maxLengthInPixels) ||
+                ((lenAddTwoWords > maxLengthInPixels) &&
+                 (lenAddOneWordAndEllipsis > maxLengthInPixels))) {
                 res += ' ...';
                 break;
             }
@@ -108,6 +120,8 @@ var DQA = React.createClass({
                         cellData, cellDataKey,
                         rowData, rowIndex,
                         columnData, width) {
+        // Account for cell padding when calculating the acceptable text width
+        width -= 20;
         return this._trimToLength(cellData, width);
     },
 
@@ -119,6 +133,8 @@ var DQA = React.createClass({
         // If we are linking from table level, link to the site's report for the same table.
         // Otherwise link to top-level DQA for the site. 
         
+        // Account for cell padding when calculating the acceptable text width
+        width -= 20;
         cellData = this._trimToLength(cellData, width);
 
         var baseUrl = location.href;
@@ -138,7 +154,7 @@ var DQA = React.createClass({
         var sites = cellData.split(' ');
         var links = sites.map(function(record) {
             if (record === '...') {
-                return (<span key='ellipses'>...</span>);
+                return (<span key='ellipsis'>...</span>);
             }
 
             var siteName;
