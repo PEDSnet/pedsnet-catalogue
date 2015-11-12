@@ -1,14 +1,18 @@
 var React = require('react'),
     _ = require('underscore');
 
+var OverlayTrigger = require('react-bootstrap').OverlayTrigger,
+    Tooltip = require('react-bootstrap').Tooltip;
+
 var FixedDataTable = require('fixed-data-table'),
     Column = FixedDataTable.Column,
+    Helper = require('./table-helper'),
     Page = require('./pages/page'),
     Table = FixedDataTable.Table,
     Tabs = require('./tabs'),
-    Title = require('./title');
+    Title = require('./title'),
+    TitleHelper = require('./title-helper');
 
-var Helper = require('./table-helper');
 
 var isColumnResizing;
 
@@ -19,16 +23,18 @@ var SortTypes = {
       
 var DQAScores = React.createClass({
     propTypes: {
-        title: React.PropTypes.object,
+        activeTab: React.PropTypes.string,
+        baseUrl: React.PropTypes.string,
         columnWidth: React.PropTypes.number,
         data: React.PropTypes.object,
-        title: React.PropTypes.object,
         description: React.PropTypes.string,
-        siteSpecific: React.PropTypes.bool,
         siteName: React.PropTypes.string,
-        baseUrl: React.PropTypes.string,
-        activeTab: React.PropTypes.string,
-        tabList: React.PropTypes.array
+        siteSpecific: React.PropTypes.bool,
+        tabList: React.PropTypes.array,
+        title: React.PropTypes.object,
+        titleTables: React.PropTypes.array,
+        titleFields: React.PropTypes.array,
+        titleSites: React.PropTypes.array
     },
 
     getDefaultProps: function() {
@@ -307,10 +313,16 @@ var DQAScores = React.createClass({
         // not on hover over. 
         var info;
         if (cellDataKey !== 'name') {
-            info =
-                <a data-toggle='tooltip' title={tooltip_text} trigger='click'>
-                    <i className='fa fa-info-circle' style={{'marginLeft': '5px'}}></i>
-                </a>;
+
+            var tooltip = (
+              <Tooltip id='issue_type_descr'>{tooltip_text}</Tooltip>
+            );
+
+            info = (
+                <OverlayTrigger placement='top' overlay={tooltip}>
+                    <i className='fa fa-info-circle'></i>
+                </OverlayTrigger>
+            );
         } 
 
         var badge;
@@ -338,6 +350,8 @@ var DQAScores = React.createClass({
         var numRows = this.state.rows.length || 0;
         var statusList = Helper.statusList;
         
+        TitleHelper.renderTitle(this);
+
         // columns should be displayed in the order specified by statusList[]
         var statusList = _.clone(this.state.statusList).sort(function (a, b) {
             // for columns that don't have a sort order defined, we'll pick the
@@ -445,7 +459,7 @@ var DQAScores = React.createClass({
         return (
             <Page>
                 <div className='margined'>
-                    {this.props.title}
+                    {TitleHelper.renderTitle(this)}
                     <p>{this.props.description}</p>
                 </div>
                 {tabs}

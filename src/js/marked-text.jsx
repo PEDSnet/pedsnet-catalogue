@@ -4,7 +4,8 @@ var React = require('react'),
 
 var Page = require('./pages/page'),
     Tabs = require('./tabs'),
-    Title = require('./title');
+    Title = require('./title'),
+    TitleHelper = require('./title-helper');
     
 
 marked.setOptions({
@@ -21,14 +22,16 @@ marked.setOptions({
 
 var Element = React.createClass({
     propTypes: {
-        title: React.PropTypes.object,
-        content: React.PropTypes.string,
-        title: React.PropTypes.object,
-        subtitle: React.PropTypes.string,
-        description: React.PropTypes.string,
-        baseUrl: React.PropTypes.string,
         activeTab: React.PropTypes.string,
-        tabList: React.PropTypes.array
+        baseUrl: React.PropTypes.string,
+        content: React.PropTypes.string,
+        description: React.PropTypes.string,
+        subtitle: React.PropTypes.string,
+        tabList: React.PropTypes.array,
+        title: React.PropTypes.object,
+        titleFields: React.PropTypes.array,
+        titleTables: React.PropTypes.array,
+        titleSites: React.PropTypes.array
     },
 
     getDefaultProps: function() {
@@ -51,6 +54,8 @@ var Element = React.createClass({
     },
     
     render: function() {
+        TitleHelper.renderTitle(this);
+
         var contents =
             <div className='paragraph' dangerouslySetInnerHTML={{__html: marked(this.props.content)}} />
 
@@ -70,7 +75,7 @@ var Element = React.createClass({
         return (
             <Page>
                 <div className='margined'>
-                    {this.props.title}
+                    {TitleHelper.renderTitle(this)}
                     <p>{this.props.description}</p>
                 </div>
                 {tabs}

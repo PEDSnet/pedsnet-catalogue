@@ -45,8 +45,6 @@ page('/', function() {
 
 page('/models/:model?/:version?/:arg1?/:arg2?/:arg3*', function(cxt) {
     var model = cxt.params.model;
-    var table = cxt.params.table;
-    var field = cxt.params.field;
     var version = cxt.params.version;
     var arg1 = cxt.params.arg1;
     var arg2 = cxt.params.arg2;
@@ -124,19 +122,7 @@ page('/models/:model?/:version?/:arg1?/:arg2?/:arg3*', function(cxt) {
 
             if (versions.length > 0) {
                 var v = versions.sort().reverse()[0];
-                if (arg3) {
-                    page.redirect(router.reverse(model, v, arg1, arg2, arg3));
-                    return;
-                }
-                if (arg2) {
-                    page.redirect(router.reverse(model, v, arg1, arg2));
-                    return;
-                }
-                if (arg1) {
-                    page.redirect(router.reverse(model, v, arg1));
-                    return;
-                }
-                page.redirect(router.reverse(model, v));
+                page.redirect(router.reverse(model, v, arg1, arg2, arg3));
             }
          }).catch(function() {});
 
@@ -148,58 +134,69 @@ page('/models/:model?/:version?/:arg1?/:arg2?/:arg3*', function(cxt) {
     if (arg1 === undefined) {
         arg1='';
     }
+
     if (['tables', 'etl', 'dqa', ''].indexOf(arg1) >= 0) {
         title = <Title
             model={model}
-            version={version}
-            site={arg2}/>;
+            version={version}/>;
 
         tabList = ['tables', 'etl', 'dqa'];
         key = model + '_' + version + '_' + arg1;
 
         if (arg1 === '') {
             component = React.render(
-                <Desc 
-                    key={key}
-                    baseUrl = {router.reverse(model, version)}
-                    activeTab = {arg1}
-                    tabList = {tabList}
-                    title = {title}/>,
+                <Desc key={key}
+                      baseUrl = {router.reverse(model, version)}
+                      activeTab = {arg1}
+                      tabList = {tabList}>
+                    {title}
+                </Desc>,
                 mainRegion
             );
         }
         else if (arg1 === 'tables') {
             component = React.render(
-                <List
-                    key={key}
-                    model={model}
-                    version={version}
-                    baseUrl = {router.reverse(model, version)}
-                    activeTab = {arg1}
-                    tabList = {tabList}
-                    title = {title}/>,
+                <List key={key}
+                      model={model}
+                      version={version}
+                      baseUrl = {router.reverse(model, version)}
+                      activeTab = {arg1}
+                      tabList = {tabList}>
+                    {title}
+                </List>,
                 mainRegion
             );
         }
         else if (arg1 === 'etl') {
+            title = <Title
+                model={model}
+                version={version}
+                activeTab={arg1}/>;
+
             component = React.render(
-                <MarkedText 
-                    key={key}
-                    baseUrl = {router.reverse(model, version)}
-                    activeTab = {arg1}
-                    tabList = {tabList}
-                    title = {title}/>,
+                <MarkedText  key={key}
+                             baseUrl = {router.reverse(model, version)}
+                             activeTab = {arg1}
+                             tabList = {tabList}>
+                    {title}
+                </MarkedText>,
                 mainRegion
             );
         }
         else if (arg1 === 'dqa') {
+            title = <Title
+                model={model}
+                version={version}
+                site={arg2}
+                activeTab='dqa'/>;
+
             component = React.render(
-                <DQAScores 
-                    key={key}
-                    baseUrl = {router.reverse(model, version)}
-                    activeTab = {arg1}
-                    tabList = {tabList}
-                    title = {title}/>,
+                <DQAScores key={key}
+                           baseUrl = {router.reverse(model, version)}
+                           activeTab = {arg1}
+                           tabList = {tabList}>
+                    {title}
+                </DQAScores>,
                 mainRegion
             );
         }
@@ -214,11 +211,22 @@ page('/models/:model?/:version?/:arg1?/:arg2?/:arg3*', function(cxt) {
                     return;
                 }
 
+                var tableNames = resp.data.tables.map(function(obj) {
+                    return obj.name;
+                });
+
                 if (arg1 === 'tables') {
                     component.setProps({
-                        items: resp.data.tables
+                        items: resp.data.tables,
+                        titleTables: tableNames
                     });
                 }
+                else {
+                    component.setProps({
+                        titleTables: tableNames
+                    });
+                }
+
 
                 component.enableTab('tables');
             }
@@ -242,13 +250,26 @@ page('/models/:model?/:version?/:arg1?/:arg2?/:arg3*', function(cxt) {
 
             var urlDQA = resources.getDQA_URL(model, version);
             
-            // site-specific DQA requested
+            // site-specific DQA requested:
+            // first fetch the list of available sites (the list is used in the title),
+            // then adjust the DQA url, so that the next fetch gets us this site's data
             if (arg1 === 'dqa' && arg2) {
-                urlDQA += '/' + arg2;
+                var urlSiteList = resources.getDQASiteListURL(model, version);
+
+                client.fetch({url: urlSiteList, cache: true}).then(function(resp) {
+                    if (resp.data && !_.isEmpty(resp.data)) {
+                        component.setProps({
+                            titleSites: resp.data
+                        });
+                    }
+                }).catch(function() {});
 
                 component.setProps({
                     tabList: ['dqa']
                 });
+
+                // adjust the url so that the next block fetches this site's data
+                urlDQA += arg2;
             }
 
             client.fetch({url: urlDQA, cache: true}).then(function(resp) {
@@ -275,11 +296,15 @@ page('/models/:model?/:version?/:arg1?/:arg2?/:arg3*', function(cxt) {
         arg2='';
     }
 
+    // site comments are only available on field level
+    if (arg2 === 'site_comments') {
+        arg2='';
+    }
+
     title = <Title
         model={model}
         version={version}
-        table={arg1}
-        site={arg3}/>;
+        table={arg1}/>;
 
     tabList = ['fields', 'etl', 'dqa'];
     key = model + '_' + version + '_' + arg1 + '_' + arg2;
@@ -287,26 +312,26 @@ page('/models/:model?/:version?/:arg1?/:arg2?/:arg3*', function(cxt) {
     if (['fields', 'etl', 'dqa', ''].indexOf(arg2) >= 0) {
         if (arg2 === '') {
             component = React.render(
-                <Desc 
-                    key={key}
-                    baseUrl = {router.reverse(model, version, arg1)}
-                    activeTab = {arg2}
-                    tabList = {tabList}
-                    title = {title}/>,
+                <Desc key={key}
+                      baseUrl = {router.reverse(model, version, arg1)}
+                      activeTab = {arg2}
+                      tabList = {tabList}>
+                    {title}
+                </Desc>,
                 mainRegion
             );
         }
         else if (arg2 === 'fields') {
             component = React.render(
-                <List 
-                    key={key}
-                    model={model}
-                    version={version}
-                    table={arg1}
-                    baseUrl = {router.reverse(model, version, arg1)}
-                    activeTab = {arg2}
-                    tabList = {tabList}
-                    title = {title}/>,
+                <List key={key}
+                      model={model}
+                      version={version}
+                      table={arg1}
+                      baseUrl = {router.reverse(model, version, arg1)}
+                      activeTab = {arg2}
+                      tabList = {tabList}>
+                    {title}
+                </List>,
                 mainRegion
             );
         }
@@ -315,16 +340,15 @@ page('/models/:model?/:version?/:arg1?/:arg2?/:arg3*', function(cxt) {
                 model={model}
                 version={version}
                 table={arg1}
-                site={arg3}
                 activeTab='etl'/>;
 
             component = React.render(
-                <MarkedText
-                    key={key}
-                    baseUrl = {router.reverse(model, version, arg1)}
-                    activeTab = {arg2}
-                    tabList = {tabList}
-                    title = {title}/>,
+                <MarkedText key={key}
+                            baseUrl = {router.reverse(model, version, arg1)}
+                            activeTab = {arg2}
+                            tabList = {tabList}>
+                    {title}
+                </MarkedText>,
                 mainRegion
             );
         }
@@ -337,14 +361,49 @@ page('/models/:model?/:version?/:arg1?/:arg2?/:arg3*', function(cxt) {
                 activeTab='dqa'/>;
 
             component = React.render(
-                <DQA
-                    key={key}
-                    baseUrl = {router.reverse(model, version, arg1)}
-                    activeTab = {arg2}
-                    tabList = {tabList}
-                    title = {title}/>,
+                <DQA key={key}
+                     baseUrl = {router.reverse(model, version, arg1)}
+                     activeTab = {arg2}
+                     tabList = {tabList}>
+                    {title}
+                </DQA>,
                 mainRegion
             );
+        }
+
+        // set table and field lists for the dropdown in the title
+        if (!(arg2 === 'dqa' && arg3)) {
+            //table list
+            var urlDataModel = resources.getDataModelURL(model, version);
+            client.fetch({url: urlDataModel, cache: true}).then(function(resp) {
+                if (resp.data && resp.data.tables && !_.isEmpty(resp.data.tables)) {
+                    var tableNames = resp.data.tables.map(function(obj) {
+                        return obj.name;
+                    });
+
+                    var t = _.find(resp.data.tables, function(t) {
+                        return (t.name === arg1);
+                    });
+                    var fieldNames = t.fields.map(function(f) {
+                        return f.name;
+                    });
+
+                    component.setProps({
+                        titleTables: tableNames,
+                        titleFields: fieldNames
+                    });
+                }
+            }).catch(function() {});
+        }
+        else {
+            var urlDQA = resources.getDQA_URL(model, version) + arg3 + '/';
+            client.fetch({url: urlDQA, cache: true}).then(function(resp) {
+                if (resp.data) {
+                    component.setProps({
+                        titleTables: Object.keys(resp.data)
+                    });
+                }
+            }).catch(function() {});
         }
 
         var urlDataModel = resources.getDataModelURL(model, version, arg1);
@@ -391,13 +450,26 @@ page('/models/:model?/:version?/:arg1?/:arg2?/:arg3*', function(cxt) {
 
             var urlDQA = resources.getDQA_URL(model, version, arg1);
 
-            // site-specific DQA requested
+            // site-specific DQA requested:
+            // first fetch the list of sites that have an issue against this table 
+            // (this list is needed for the dropdown menu in the title);
+            // then adjust the DQA url, so that the next fetch gets us this site's data
             if (arg2 === 'dqa' && arg3) {
-                urlDQA += '/' + arg3;
+                var urlSiteList = resources.getDQASiteListURL(model, version, arg1);
+                client.fetch({url: urlSiteList, cache: true}).then(function(resp) {
+                    if (resp.data && !_.isEmpty(resp.data)) {
+                        component.setProps({
+                            titleSites: resp.data
+                        });
+                    }
+                }).catch(function() {});
 
                 component.setProps({
                     tabList: ['dqa']
                 });
+
+                // adjust the url so that the next block fetches this site's data
+                urlDQA += arg3;
             }
 
             client.fetch({url: urlDQA, cache: true}).then(function(resp) {
@@ -439,72 +511,91 @@ page('/models/:model?/:version?/:arg1?/:arg2?/:arg3*', function(cxt) {
         model={model}
         version={version}
         table={arg1}
-        field={arg2}/>;
+        field={arg2}
+        activeTab={arg3}/>;
 
     tabList = ['etl', 'dqa', 'site_comments'];
     key = model + '_' + version + '_' + arg1 + '_' + arg2 + '_' + arg3;
 
     if (['etl', 'dqa', 'site_comments', ''].indexOf(arg3) >= 0) {
         if (arg3 === '') {
+            title = <Title
+                model={model}
+                version={version}
+                table={arg1}
+                field={arg2}/>;
+
             component = React.render(
-                <Desc
-                    key={key}
-                    baseUrl = {router.reverse(model, version, arg1, arg2)}
-                    activeTab = {arg3}
-                    tabList = {tabList}
-                    title = {title}/>,
+                <Desc key={key}
+                      baseUrl = {router.reverse(model, version, arg1, arg2)}
+                      activeTab = {arg3}
+                      tabList = {tabList}>
+                    {title}
+                </Desc>,
                 mainRegion
             );
         }
         else if (arg3 === 'etl') {
-            title = <Title
-                model={model}
-                version={version}
-                table={arg1}
-                field={arg2}
-                activeTab='etl'/>;
-
             component = React.render(
-                <MarkedText
-                    key={key}
-                    baseUrl = {router.reverse(model, version, arg1, arg2)}
-                    activeTab = {arg3}
-                    tabList = {tabList}
-                    title = {title}/>,
+                <MarkedText key={key}
+                            baseUrl = {router.reverse(model, version, arg1, arg2)}
+                            activeTab = {arg3}
+                            tabList = {tabList}>
+                    {title}
+                </MarkedText>,
                 mainRegion
             );
         }
-        
-        if (arg3 === 'dqa') {
-            title = <Title
-                model={model}
-                version={version}
-                table={arg1}
-                field={arg2}
-                activeTab='dqa'/>;
-
+        else if (arg3 === 'dqa') {
             component = React.render(
-                <DQA
-                    key={key}
-                    baseUrl = {router.reverse(model, version, arg1, arg2)}
-                    activeTab = {arg3}
-                    tabList = {tabList}
-                    title = {title}/>,
+                <DQA key={key}
+                     baseUrl = {router.reverse(model, version, arg1, arg2)}
+                     activeTab = {arg3}
+                     tabList = {tabList}>
+                    {title}
+                </DQA>,
                mainRegion
             );
         }
-    
-        if (arg3 === 'site_comments') {
+        else if (arg3 === 'site_comments') {
             component = React.render(
-                <MarkedText
-                    key={key}
-                    baseUrl = {router.reverse(model, version, arg1, arg2)}
-                    activeTab = {arg3}
-                    tabList = {tabList}
-                    title = {title}/>,
+                <MarkedText key={key}
+                            baseUrl = {router.reverse(model, version, arg1, arg2)}
+                            activeTab = {arg3}
+                            tabList = {tabList}>
+                    {title}
+                </MarkedText>,
                 mainRegion
             );
         }
+
+        // set table list for the dropdown in the title
+        var urlDataModel = resources.getDataModelURL(model, version);
+        client.fetch({url: urlDataModel, cache: true}).then(function(resp) {
+            if (resp.data && resp.data.tables && !_.isEmpty(resp.data.tables)) {
+                var tableNames = resp.data.tables.map(function(obj) {
+                    return obj.name;
+                });
+
+                component.setProps({
+                    titleTables: tableNames
+                });
+            }
+        }).catch(function() {});
+
+        // set field list for the dropdown in the title
+        var urlDataModel = resources.getDataModelURL(model, version, arg1);
+        client.fetch({url: urlDataModel, cache: true}).then(function(resp) {
+            if (resp.data && resp.data.fields && !_.isEmpty(resp.data.fields)) {
+                var fieldNames = resp.data.fields.map(function(obj) {
+                    return obj.name;
+                });
+
+                component.setProps({
+                    titleFields: fieldNames
+                });
+            }
+        }).catch(function() {});
 
         // get field description
         var urlDataModel = resources.getDataModelURL(model, version, arg1, arg2);
