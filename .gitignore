@@ -2,6 +2,7 @@
 *.sw?
 *.tar.gz
 *.zip
+*.env
 .grunt
 .sass-cache
 local

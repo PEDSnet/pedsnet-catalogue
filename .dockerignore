@@ -2,3 +2,4 @@
 build
 src
 node_modules
+*.env

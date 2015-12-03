@@ -1,6 +1,7 @@
-// Hard-coded URLs to resources of interest.
-// TODO: this could be driven by a separate domain.
 var _ = require('underscore');
+
+// Get the top-level service URLs.
+var urls = window.serviceURLs;
 
 module.exports = {
     models: ['pedsnet',
@@ -33,13 +34,7 @@ module.exports = {
         }.bind(this));
     },
 
-    urls: {
-        dataDict: 'http://reslnpedsndev01.research.chop.edu:6002/',
-        ddl: 'http://reslnpedsndev01.research.chop.edu:6006/',
-        dataModel: 'http://reslnpedsndev01.research.chop.edu:6003/models/',
-        dqa: 'http://reslnpedsndev01.research.chop.edu:6005/',
-        etl: 'http://reslnpedsndev01.research.chop.edu:6001/'
-    },
+    urls: urls,
 
     getDataModelURL: function(model, version, table, field) {
         var url = this.urls.dataModel;

@@ -38,10 +38,21 @@ Open the browser to `localhost:8125`.
 
 ## Deploy
 
-For deployment, Docker and Compose must be installed.
+For deployment, Docker must be used. Define a environment file with the following service URLs defined. These URLs will be dynamically added to the `index.html` file.
 
 ```
-docker-compose up -d
+# services.env
+PEDSNET_ETL_URL=http://example.com:6001/
+PEDSNET_DDL_URL=http://example.com:6006/
+PEDSNET_DATAMODELS_URL=http://example.com:6003/models/
+PEDSNET_DQA_URL=http://example.com:6005/
+PEDSNET_DATADICT_URL=http://example.com:6002/
+```
+
+Run the container:
+
+```
+docker run --name=pedsnet-catalogue --env-file=services.env -p 80:80 -d pedsnet/catalogue
 ```
 
 ## Docker
