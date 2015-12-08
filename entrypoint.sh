@@ -10,5 +10,6 @@ sed -i "s|ddl: ''|ddl: '$PEDSNET_DDL_URL'|g" /usr/share/nginx/html/index.html
 sed -i "s|dataModel: ''|dataModel: '$PEDSNET_DATAMODELS_URL'|g" /usr/share/nginx/html/index.html
 sed -i "s|dqa: ''|dqa: '$PEDSNET_DQA_URL'|g" /usr/share/nginx/html/index.html
 sed -i "s|etl: ''|etl: '$PEDSNET_ETL_URL'|g" /usr/share/nginx/html/index.html
+sed -i "s|root: ''|root: '$PEDSNET_ROOT'|g" /usr/share/nginx/html/index.html
 
 $@

@@ -38,7 +38,9 @@ Open the browser to `localhost:8125`.
 
 ## Deploy
 
-For deployment, Docker must be used. Define a environment file with the following service URLs defined. These URLs will be dynamically added to the `index.html` file.
+For deployment, Docker must be used. Define an environment file with the following service URLs  and the 
+application base path specified. 
+The URLs and the base path will be dynamically added to the `index.html` file.
 
 ```
 # services.env
@@ -47,6 +49,7 @@ PEDSNET_DDL_URL=http://example.com:6006/
 PEDSNET_DATAMODELS_URL=http://example.com:6003/models/
 PEDSNET_DQA_URL=http://example.com:6005/
 PEDSNET_DATADICT_URL=http://example.com:6002/
+PEDSNET_ROOT=/catalogue
 ```
 
 Run the container:

@@ -7,6 +7,7 @@ var client = require('./client'),
     DQA = require('./dqa'),
     DQAScores = require('./dqa-scores'),
     Desc = require('./description'),
+    env = require('./env'),
     List = require('./list'),
     Header = require('./header'),
     MarkedText = require('./marked-text'),
@@ -682,6 +683,11 @@ page('*', function(cxt, next) {
 
     React.render(component, mainRegion);
 });
+
+// Set the base path
+if (env.root) {
+    page.base(env.root);
+}
 
 // Start the routing.
 page.start();

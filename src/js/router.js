@@ -1,4 +1,5 @@
-var resources = require('./resources');
+var env = require('./env'),
+    resources = require('./resources');
 
 
 var reverse = function() {
@@ -22,7 +23,19 @@ var reverse = function() {
     return addr;
 };
 
+var getCurrentPath = function() {
+    var path = location.href;
+
+    // trim off the base path
+    if (env.root) {
+        path = path.split(env.root)[1];
+    }
+
+    return path;
+};
+
 
 module.exports = {
+    getCurrentPath: getCurrentPath,
     reverse: reverse
 };

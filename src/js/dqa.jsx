@@ -5,6 +5,7 @@ var FixedDataTable = require('fixed-data-table'),
     Column = FixedDataTable.Column,
     Helper = require('./table-helper'),
     Page = require('./pages/page'),
+    router = require('./router'),
     Table = FixedDataTable.Table,
     Tabs = require('./tabs'),
     Title = require('./title'),
@@ -80,6 +81,10 @@ var DQA = React.createClass({
     },
 
     _trimToLength: function(str, maxLengthInPixels) {
+        if(!str) {
+            return '';
+        }
+        
         var data = str.trim().split(' ');
         var res = '';
         var lenAddOneWord;
@@ -137,7 +142,7 @@ var DQA = React.createClass({
         width -= 20;
         cellData = this._trimToLength(cellData, width);
 
-        var baseUrl = location.href;
+        var baseUrl = router.getCurrentPath();
         // there may or may not be a '#' or a '/' at the end,
         // so it's easier to just chop off and re-construct the 'dqa' suffix
         baseUrl = baseUrl.substring(0, baseUrl.indexOf('dqa'));
