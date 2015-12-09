@@ -8,6 +8,7 @@ var FixedDataTable = require('fixed-data-table'),
     Column = FixedDataTable.Column,
     Helper = require('./table-helper'),
     Page = require('./pages/page'),
+    router = require('./router'),
     Table = FixedDataTable.Table,
     Tabs = require('./tabs'),
     Title = require('./title'),
@@ -67,7 +68,7 @@ var DQAScores = React.createClass({
     
     _renderLink: function(cellData) {
         // Link to the DQA totals for the given site
-        var url = location.href;
+        var url = router.getCurrentPath();
         // there may or may not be a '#' or a '/' at the end,
         // so it's easier to just chop off and re-construct the 'dqa' suffix
         url = url.substring(0, url.indexOf('dqa'));
@@ -78,7 +79,7 @@ var DQAScores = React.createClass({
 
     _renderTableLink: function(cellData) {
         // Link to the DQA information for this table, specific to the given site 
-        var url = location.href;
+        var url = router.getCurrentPath();
         url = url.substring(0, url.indexOf('dqa')-1);
         url += '/' + cellData + '/dqa/' + this.props.siteName + '/';
 
