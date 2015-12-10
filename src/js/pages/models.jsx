@@ -50,7 +50,7 @@ var Models = React.createClass({
             }
 
             versions = _.map(versions, function(ver) {
-                urlVersion = router.reverse(name, ver);
+                urlVersion = router.reverse('model', name, ver);
                 return (
                     <li key={name + '_' + ver} className='list-group-item'>
                         <a href={urlVersion}>{ver}</a>
@@ -63,7 +63,7 @@ var Models = React.createClass({
                      style={{'padding': '20px'}}>
                     <div className='page-header' style={{'height': '30px', marginTop: 0}}>
                         <h3>
-                            <a href={router.reverse(name)} style={{'textDecoration': 'none'}}>
+                            <a href={router.reverse('model', name)} style={{'textDecoration': 'none'}}>
                                 {resources.dataModelTitles[aliasedName]}
                             </a>
                         </h3>

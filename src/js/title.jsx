@@ -51,7 +51,7 @@ var Title = React.createClass({
 
             if (table && field) {
                 removeField = (
-                    <a href={router.reverse(model, version, table, suffix)}>
+                    <a href={router.reverse('model', model, version, table, suffix)}>
                         <i className='fa fa-remove'></i>
                     </a>
                 );                            
@@ -60,7 +60,7 @@ var Title = React.createClass({
             menuItems = undefined;
             if (tables) {
                 menuItems = _.map(tables, function(el) {
-                    var dropdownURL = router.reverse(model, version, el, suffix);
+                    var dropdownURL = router.reverse('model', model, version, el, suffix);
                     return (<MenuItem key={el+'_dropdown'} href={dropdownURL}>{el}</MenuItem>);
                 });
             }
@@ -88,7 +88,7 @@ var Title = React.createClass({
             menuItems = undefined;
             if (fields) {
                 menuItems = _.map(fields, function(el) {
-                    var dropdownURL = router.reverse(model, version, table, el, suffix);
+                    var dropdownURL = router.reverse('model', model, version, table, el, suffix);
                     return (<MenuItem key={el+'_dropdown'} href={dropdownURL}>{el}</MenuItem>);
                 });
             }
@@ -130,7 +130,7 @@ var Title = React.createClass({
                     <div>
                         <i className='fa fa-database initial'></i>
                         <span>
-                            <a href={router.reverse(model, version, suffix)}>
+                            <a href={router.reverse('model', model, version, suffix)}>
                                 {resources.getModelTitle(model) + ' ' + version + ' Data Model'}
                             </a>
                         </span>
@@ -147,7 +147,7 @@ var Title = React.createClass({
             tableElement = undefined;
             if (table) {
                 var removeTable = (
-                    <a href={router.reverse(model, version, 'dqa', site)}>
+                    <a href={router.reverse('model', model, version, 'dqa', site)}>
                         <i className='fa fa-remove'></i>
                     </a>
                 );                            
@@ -155,7 +155,7 @@ var Title = React.createClass({
                 menuItems = undefined;
                 if (tables) {
                     menuItems = _.map(tables, function(el) {
-                        var dropdownURL = router.reverse(model, version, el, 'dqa', site);
+                        var dropdownURL = router.reverse('model', model, version, el, 'dqa', site);
                         return (<MenuItem key={el+'_dropdown'} href={dropdownURL}>{el}</MenuItem>);
                     });
                 }
@@ -173,7 +173,7 @@ var Title = React.createClass({
                 );
  
                 removeSite = (
-                    <a href={router.reverse(model, version, table, 'dqa')}>
+                    <a href={router.reverse('model', model, version, table, 'dqa')}>
                         <i className='fa fa-remove'></i>
                     </a>
                 );                            
@@ -184,10 +184,10 @@ var Title = React.createClass({
                 menuItems = _.map(sites, function(s) {
                     var dropdownURL;
                     if (table) {
-                        dropdownURL = router.reverse(model, version, table, 'dqa', s);
+                        dropdownURL = router.reverse('model', model, version, table, 'dqa', s);
                     }
                     else {
-                        dropdownURL = router.reverse(model, version, 'dqa', s);
+                        dropdownURL = router.reverse('model', model, version, 'dqa', s);
                     }
                     return (<MenuItem key={s+'_dropdown'} href={dropdownURL}>{s}</MenuItem>);
                 });
@@ -198,7 +198,7 @@ var Title = React.createClass({
                     <div>
                         <i className='fa fa-database initial'></i>
                         <span>
-                            <a href={router.reverse(model, version, 'dqa')}>
+                            <a href={router.reverse('model', model, version, 'dqa')}>
                                 {resources.getModelTitle(model) + ' ' + version + ' Data Model'}
                             </a>
                         </span>

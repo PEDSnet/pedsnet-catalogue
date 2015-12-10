@@ -123,7 +123,7 @@ page('/models/:model?/:version?/:arg1?/:arg2?/:arg3*', function(cxt) {
 
             if (versions.length > 0) {
                 var v = versions.sort().reverse()[0];
-                page.redirect(router.reverse(model, v, arg1, arg2, arg3));
+                page.redirect(router.reverse('model', model, v, arg1, arg2, arg3));
             }
          }).catch(function() {});
 
@@ -147,7 +147,7 @@ page('/models/:model?/:version?/:arg1?/:arg2?/:arg3*', function(cxt) {
         if (arg1 === '') {
             component = React.render(
                 <Desc key={key}
-                      baseUrl = {router.reverse(model, version)}
+                      baseUrl = {router.reverse('model', model, version)}
                       activeTab = {arg1}
                       tabList = {tabList}>
                     {title}
@@ -160,7 +160,7 @@ page('/models/:model?/:version?/:arg1?/:arg2?/:arg3*', function(cxt) {
                 <List key={key}
                       model={model}
                       version={version}
-                      baseUrl = {router.reverse(model, version)}
+                      baseUrl = {router.reverse('model', model, version)}
                       activeTab = {arg1}
                       tabList = {tabList}>
                     {title}
@@ -176,7 +176,7 @@ page('/models/:model?/:version?/:arg1?/:arg2?/:arg3*', function(cxt) {
 
             component = React.render(
                 <MarkedText  key={key}
-                             baseUrl = {router.reverse(model, version)}
+                             baseUrl = {router.reverse('model', model, version)}
                              activeTab = {arg1}
                              tabList = {tabList}>
                     {title}
@@ -193,7 +193,7 @@ page('/models/:model?/:version?/:arg1?/:arg2?/:arg3*', function(cxt) {
 
             component = React.render(
                 <DQAScores key={key}
-                           baseUrl = {router.reverse(model, version)}
+                           baseUrl = {router.reverse('model', model, version)}
                            activeTab = {arg1}
                            tabList = {tabList}>
                     {title}
@@ -208,7 +208,7 @@ page('/models/:model?/:version?/:arg1?/:arg2?/:arg3*', function(cxt) {
                 // only redirect to the default tab here, because now we actually do know
                 // that the info for that tab is actually available.
                 if (arg1 === '') {
-                    page.redirect(router.reverse(model, version, 'tables'));
+                    page.redirect(router.reverse('model', model, version, 'tables'));
                     return;
                 }
 
@@ -314,7 +314,7 @@ page('/models/:model?/:version?/:arg1?/:arg2?/:arg3*', function(cxt) {
         if (arg2 === '') {
             component = React.render(
                 <Desc key={key}
-                      baseUrl = {router.reverse(model, version, arg1)}
+                      baseUrl = {router.reverse('model', model, version, arg1)}
                       activeTab = {arg2}
                       tabList = {tabList}>
                     {title}
@@ -328,7 +328,7 @@ page('/models/:model?/:version?/:arg1?/:arg2?/:arg3*', function(cxt) {
                       model={model}
                       version={version}
                       table={arg1}
-                      baseUrl = {router.reverse(model, version, arg1)}
+                      baseUrl = {router.reverse('model', model, version, arg1)}
                       activeTab = {arg2}
                       tabList = {tabList}>
                     {title}
@@ -345,7 +345,7 @@ page('/models/:model?/:version?/:arg1?/:arg2?/:arg3*', function(cxt) {
 
             component = React.render(
                 <MarkedText key={key}
-                            baseUrl = {router.reverse(model, version, arg1)}
+                            baseUrl = {router.reverse('model', model, version, arg1)}
                             activeTab = {arg2}
                             tabList = {tabList}>
                     {title}
@@ -363,7 +363,7 @@ page('/models/:model?/:version?/:arg1?/:arg2?/:arg3*', function(cxt) {
 
             component = React.render(
                 <DQA key={key}
-                     baseUrl = {router.reverse(model, version, arg1)}
+                     baseUrl = {router.reverse('model', model, version, arg1)}
                      activeTab = {arg2}
                      tabList = {tabList}>
                     {title}
@@ -411,7 +411,7 @@ page('/models/:model?/:version?/:arg1?/:arg2?/:arg3*', function(cxt) {
         client.fetch({url: urlDataModel, cache: true}).then(function(resp) {
             if (resp.data && resp.data.fields && !_.isEmpty(resp.data.fields)) {
                 if (arg2 === '') {
-                    page.redirect(router.reverse(model, version, arg1, 'fields'));
+                    page.redirect(router.reverse('model', model, version, arg1, 'fields'));
                     return;
                 }
 
@@ -528,7 +528,7 @@ page('/models/:model?/:version?/:arg1?/:arg2?/:arg3*', function(cxt) {
 
             component = React.render(
                 <Desc key={key}
-                      baseUrl = {router.reverse(model, version, arg1, arg2)}
+                      baseUrl = {router.reverse('model', model, version, arg1, arg2)}
                       activeTab = {arg3}
                       tabList = {tabList}>
                     {title}
@@ -539,7 +539,7 @@ page('/models/:model?/:version?/:arg1?/:arg2?/:arg3*', function(cxt) {
         else if (arg3 === 'etl') {
             component = React.render(
                 <MarkedText key={key}
-                            baseUrl = {router.reverse(model, version, arg1, arg2)}
+                            baseUrl = {router.reverse('model', model, version, arg1, arg2)}
                             activeTab = {arg3}
                             tabList = {tabList}>
                     {title}
@@ -550,7 +550,7 @@ page('/models/:model?/:version?/:arg1?/:arg2?/:arg3*', function(cxt) {
         else if (arg3 === 'dqa') {
             component = React.render(
                 <DQA key={key}
-                     baseUrl = {router.reverse(model, version, arg1, arg2)}
+                     baseUrl = {router.reverse('model', model, version, arg1, arg2)}
                      activeTab = {arg3}
                      tabList = {tabList}>
                     {title}
@@ -561,7 +561,7 @@ page('/models/:model?/:version?/:arg1?/:arg2?/:arg3*', function(cxt) {
         else if (arg3 === 'site_comments') {
             component = React.render(
                 <MarkedText key={key}
-                            baseUrl = {router.reverse(model, version, arg1, arg2)}
+                            baseUrl = {router.reverse('model', model, version, arg1, arg2)}
                             activeTab = {arg3}
                             tabList = {tabList}>
                     {title}
@@ -616,7 +616,7 @@ page('/models/:model?/:version?/:arg1?/:arg2?/:arg3*', function(cxt) {
                     var content = resp.data.model.tables[arg1].fields[arg2].etl_conventions;
                     if (content) {
                         if (arg3 === '') {
-                            page.redirect(router.reverse(model, version, arg1, arg2, 'etl'));
+                            page.redirect(router.reverse('model', model, version, arg1, arg2, 'etl'));
                             return;
                         }
 
