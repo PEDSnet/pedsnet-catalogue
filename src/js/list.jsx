@@ -56,10 +56,10 @@ var List = React.createClass({
 
             var url;
             if (table) {
-                url = router.reverse(model, version, table, name);
+                url = router.reverse('model', model, version, table, name);
             } 
             else {
-                url = router.reverse(model, version, name);
+                url = router.reverse('model', model, version, name);
             }
 
             return (

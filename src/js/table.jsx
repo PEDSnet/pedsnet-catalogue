@@ -32,7 +32,7 @@ var Table = React.createClass({
         var tblDesc = this.props.description;
 
         var fields = _.map(this.props.fields, function(field) {
-            var url = router.reverse(model, version, tblName, field.name);
+            var url = router.reverse('model', model, version, tblName, field.name);
             /*
             var tooltip_text = (field.required? 'required\n' : '') + 'type: ' + field.type + '\nlength: ' + field.length;
             return (
@@ -60,7 +60,7 @@ var Table = React.createClass({
             );
         }
         
-        var url = router.reverse(model, version, tblName);
+        var url = router.reverse('model', model, version, tblName);
         
         return (
             <div className='panel-group table'>

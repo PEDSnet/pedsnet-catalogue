@@ -1,34 +1,31 @@
-var env = require('./env'),
-    resources = require('./resources');
+var resources = require('./resources');
+
+var root = require('./env').root;
 
 
-var reverse = function() {
-	if (arguments.length === 0) {
-        return '/';
+var reverse = function(name) {
+    var path = '/';
+
+    switch(name) {
+        case 'model':
+            path = '/models/';
+            
+            for (var i=1; i<arguments.length; i++) {
+                if (arguments[i]) {
+                    path += (arguments[i] + '/');
+                }
+            }
     }
 
-	// invalid model name
-    if (arguments.length >0 && resources.models.indexOf(arguments[0]) < 0) {
-        return '/';
-    }
-
-    var addr = '/models/';
-
-    for (var i=0; i<arguments.length; i++) {
-        if (arguments[i]) {
-            addr += (arguments[i] + '/');
-        }
-    }
-
-    return addr;
+    return root + path;
 };
 
 var getCurrentPath = function() {
     var path = location.href;
 
     // trim off the base path
-    if (env.root) {
-        path = path.split(env.root)[1];
+    if (root) {
+        path = path.substring(path.indexOf(root), path.length-1);
     }
 
     return path;
