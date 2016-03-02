@@ -37,8 +37,13 @@ module.exports = {
     getDataModelURL: function(model, version, table, field) {
         var url = urls.dataModel;
 
+        // Remove trailing slash if present.
+        if(url.charAt(url.length-1) === '/') {
+            url = url.slice(0, -1)
+        }
+
         if(model) {
-            url += (this.dataModelAliases[model] || model);
+            url += '/' + (this.dataModelAliases[model] || model);
 
             if (version) {
                 url += '/' + version;
